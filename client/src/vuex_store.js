@@ -4,24 +4,22 @@ import Vuex from 'vuex'
 
 Vue.use(Vuex)
 
-// Initialise
 const store = new Vuex.Store({
   state: {
-    vuex_globalUser: '',
-    vuex_isAuthenticated: false
+    vuex_globalUser:      localStorage.getItem('vuex_globalUser')      || '',
+    vuex_isAuthenticated: localStorage.getItem('vuex_isAuthenticated') === 'true'
   },
 
   mutations: {
     set_vuex_globalUser(state, user) {
-      console.log('vuex_store.js:: set_vuex_globalUser to ' + user)
       state.vuex_globalUser = user
+      localStorage.setItem('vuex_globalUser', user)
     },
     set_vuex_isAuthenticated(state, bool) {
-      console.log('vuex_store.js:: set_vuex_is_Authenticated to ' + bool)
       state.vuex_isAuthenticated = bool
+      localStorage.setItem('vuex_isAuthenticated', String(bool))
     }
   }
-
 })
 
 export default store

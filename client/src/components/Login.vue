@@ -1,40 +1,45 @@
 <template>
   <div class="small-container">
     <h3>wishXlist - Login</h3>
+    <form @submit.prevent="login">
       <div class="field">
         <label>Username:</label>
-        <input type="text"     v-model="username" size="16" required />
+        <input type="text" v-model="username" size="16" required autocomplete="username" />
         <br />
       </div>
       <div class="field">
         <label>Password:</label>
-        <input type="password" v-model="password" size="16" required />
+        <input type="password" v-model="password" size="16" required autocomplete="current-password" />
       </div>
       <div class="field">
-        <!-- <input class="submit-btn" type="submit" value="Submit" required /> -->
-        <!-- Can we make this work by hitting the 'Enter' button as well? -->
-        <input type="button"   v-on:click="login" value="Submit" required />
+        <input type="submit" :value="loading ? 'Logging in…' : 'Submit'" :disabled="loading" />
       </div>
-      <div class="error-message" v-if="login_status_code === 401">
-        <br>Login error: Please try again.
+      <div class="error-message" v-if="error_message">
+        {{ error_message }}
       </div>
+    </form>
   </div>
 </template>
 
-<script>  
+<script>
   export default {
-    name:   'Login',
+    name: 'Login',
 
     data() {
       return {
-        username: '',
-        password: '',
-        login_status_code: 418, // "I'm a teapot" (?!)
+        username:      '',
+        password:      '',
+        loading:       false,
+        error_message: '',
       }
     },
 
+    watch: {
+      username() { this.error_message = '' },
+      password() { this.error_message = '' },
+    },
+
     mounted() {
-      // If URL route is /login?logout=true
       if (this.$route.query.logout) {
         this.logout()
       }
@@ -42,61 +47,51 @@
 
     methods: {
 
-      // Login
       async login() {
+        this.loading = true
+        this.error_message = ''
         try {
-          const response = await 
-          fetch('http://localhost:3000/Auth/Login', {
-            method:    'POST',
+          const response = await fetch('/Auth/Login', {
+            method:  'POST',
             headers: { 'Content-type': 'application/json; charset=UTF-8' },
-            body:       JSON.stringify({
-                          username: this.username, 
-                          password: this.password
-                        })
+            body:    JSON.stringify({ username: this.username, password: this.password })
           })
-          
+
           const data = await response.json()
-          this.login_status_code = response.status
-          console.log('login(): Authentication reponse: ' + JSON.stringify(data))
 
-          if (this.login_status_code === 200) { // Successful login
-            this.$store.commit('set_vuex_globalUser', data.username);
+          if (response.status === 200) {
+            this.$store.commit('set_vuex_globalUser', data.username)
             this.$store.commit('set_vuex_isAuthenticated', true)
-            console.log("Login.vue: vuex: vuex_globalUser " + this.$store.state.vuex_globalUser + ', vuex_isAuthenticated ' + this.$store.state.vuex_isAuthenticated)
-            this.$router.push('/my-wish-list');
-          } 
-          else 
-          if (this.login_status_code === 401) { // Incorrect userid/password
-            alert("wishXlist: Apologies, " + data.message)
+            const redirect = this.$route.query.redirect || '/my-wish-list'
+            this.$router.push(redirect)
+          } else if (response.status === 401) {
+            this.error_message = 'Incorrect username or password.'
+          } else {
+            this.error_message = 'Unable to connect. Please try again.'
           }
-          else 
-          { console.error('login(): Status code ' + response.status + ' not trapped!') }
-
         } catch (error) {
           console.error(error)
-          alert("login(): Apologies, technical issues encountered with login. Please contact Support")
+          this.error_message = 'Unable to connect. Please try again.'
+        } finally {
+          this.loading = false
         }
-      }, // End of login()
+      },
 
-      // Logout
       logout() {
-        // Reinitilise component variables
-        this.username = ''
-        this.password = ''
-        this.login_status_code = 418 // "I'm a teapot" (?!)        
-        
-        // Reset Vuex store variables
-        this.$store.commit('set_vuex_globalUser', '');
+        this.username      = ''
+        this.password      = ''
+        this.error_message = ''
+        this.$store.commit('set_vuex_globalUser', '')
         this.$store.commit('set_vuex_isAuthenticated', false)
-      }, // End of logout()
+      },
 
     }
   }
 </script>
 
 <style scoped>
-  /* Enter local styles here */
   .error-message {
-    color: red
+    color: red;
+    margin-top: 6px;
   }
 </style>
