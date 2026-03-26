@@ -19,6 +19,25 @@ const store = new Vuex.Store({
       state.vuex_isAuthenticated = bool
       localStorage.setItem('vuex_isAuthenticated', String(bool))
     }
+  },
+
+  actions: {
+    async fetchCurrentUser({ commit }) {
+      try {
+        const res = await fetch('/Auth/Me', { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          commit('set_vuex_globalUser', data.username);
+          commit('set_vuex_isAuthenticated', true);
+        } else {
+          commit('set_vuex_globalUser', '');
+          commit('set_vuex_isAuthenticated', false);
+        }
+      } catch {
+        commit('set_vuex_globalUser', '');
+        commit('set_vuex_isAuthenticated', false);
+      }
+    }
   }
 })
 

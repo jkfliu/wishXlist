@@ -38,6 +38,10 @@
       LayoutSideBar,
       LayoutFooter,
     },
+
+    created() {
+      this.$store.dispatch('fetchCurrentUser');
+    },
   }
 </script>
 
