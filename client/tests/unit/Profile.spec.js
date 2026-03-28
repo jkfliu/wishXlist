@@ -72,4 +72,14 @@ describe('Profile.vue', () => {
     await wrapper.vm.logout()
     expect(wrapper.vm.$router.push).toHaveBeenCalledWith('/login?logout=true')
   })
+
+  test('logout() logs error to console when fetch fails', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    global.fetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({}) })
+      .mockRejectedValueOnce(new Error('Network failure'))
+    const wrapper = createWrapper(store)
+    await wrapper.vm.logout()
+    expect(consoleSpy).toHaveBeenCalled()
+  })
 })

@@ -141,6 +141,18 @@ describe('_WishList.vue', () => {
     expect(wrapper.vm.editing).toBeNull()
   })
 
+  test('saving with empty item_name does not emit edit:wish_item', async () => {
+    const wrapper = createWrapper(store, 'self')
+    const firstRow = wrapper.findAll('tbody tr').at(0)
+    await firstRow.find('.far.fa-edit').trigger('click')
+    await wrapper.vm.$nextTick()
+
+    wrapper.vm.wish_list_array[0].item_name = ''
+    await firstRow.find('.far.fa-save').trigger('click')
+
+    expect(wrapper.emitted('edit:wish_item')).toBeFalsy()
+  })
+
   test('giftWishItem() sets gifter, gifted_date and emits gift:wish_item', async () => {
     const wrapper = createWrapper(store, 'group')
     const rows = wrapper.findAll('tbody tr')

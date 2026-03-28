@@ -29,9 +29,11 @@ afterEach(() => {
 
 describe('WishList routes - DB error', () => {
   test.each([
-    ['GET',  '/WishList',          'find',   null],
-    ['GET',  '/WishList/anyuser',  'find',   null],
-    ['POST', '/WishList/Create',   'create', { user_name: 'test', item_name: 'item' }],
+    ['GET',  '/WishList',               'find',             null],
+    ['GET',  '/WishList/anyuser',        'find',             null],
+    ['POST', '/WishList/Create',         'create',           { user_name: 'test', item_name: 'item' }],
+    ['POST', '/WishList/Update',         'findByIdAndUpdate', { _id: 'abc123', item_name: 'x' }],
+    ['POST', '/WishList/Delete/abc123',  'findByIdAndDelete', null],
   ])('%s %s returns 500 on DB failure', async (method, url, modelMethod, body) => {
     jest.spyOn(wishListModel, modelMethod).mockRejectedValueOnce(new Error('DB down'));
     const req = request(app)[method.toLowerCase()](url);
