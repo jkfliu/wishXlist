@@ -14,7 +14,7 @@
       <label>Price</label>
       <input v-model="wish_item.price" type="text" />
 
-      <label>Store</label>
+      <label>Store / URL</label>
       <input v-model="wish_item.store" type="text" />
 
       <p v-if="error && submitting" class="error-message">

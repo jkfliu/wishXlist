@@ -8,7 +8,7 @@
           <th>Item Name*</th>
           <th>Model</th>
           <th>Price</th>
-          <th>Store</th>
+          <th>Store / URL</th>
           <th>Created Date</th>
           <th>Modified Date</th>
           <th>Gifter</th>
@@ -35,7 +35,10 @@
           <td v-else>{{ wish_item.price }}</td>
 
           <td v-if="editing === wish_item._id"><input type="text" v-model="wish_item.store" /></td>
-          <td v-else>{{ wish_item.store }}</td>
+          <td v-else>
+            <a v-if="isUrl(wish_item.store)" :href="wish_item.store" target="_blank" rel="noopener noreferrer">{{ wish_item.store }}</a>
+            <span v-else>{{ wish_item.store }}</span>
+          </td>
 
           <td> {{ toDate(wish_item.item_create_date) }} </td>
           <td> {{ toDate(wish_item.item_modified_date) }} </td>
@@ -116,6 +119,15 @@
         if (!date) return ''
         var mydate = new Date(date)
         return mydate.toDateString()
+      },
+
+      isUrl(value) {
+        try {
+          const url = new URL(value)
+          return url.protocol === 'http:' || url.protocol === 'https:'
+        } catch {
+          return false
+        }
       }
     } 
   }
