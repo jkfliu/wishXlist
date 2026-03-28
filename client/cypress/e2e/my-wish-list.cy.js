@@ -1,5 +1,4 @@
-const API      = 'http://localhost:3000'
-const USER     = 'test@example.com'
+import { API, TEST_USER as USER } from '../support/commands'
 const ITEM_ID  = '507f1f77bcf86cd799439011'
 
 const seedItem = {

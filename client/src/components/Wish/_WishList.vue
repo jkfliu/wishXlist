@@ -9,14 +9,8 @@
           <th>Model</th>
           <th>Price</th>
           <th>Store</th>
-          <!-- These are valid but not shown
           <th>Created Date</th>
           <th>Modified Date</th>
-          -->
-          <!-- This works!
-          <th v-if="display_mode === 'group'">Gifter</th>
-          <th v-if="display_mode === 'group'">Gifted Date</th>
-          -->
           <th>Gifter</th>
           <th>Gifted Date</th>
           <th>Actions</th>
@@ -43,48 +37,31 @@
           <td v-if="editing === wish_item._id"><input type="text" v-model="wish_item.store" /></td>
           <td v-else>{{ wish_item.store }}</td>
 
-          <!-- These are valid but not shown
-          <td> {{ wish_item.item_create_date }} </td>
-          <td> {{ wish_item.item_modified_date }} </td>
-          -->
+          <td> {{ toDate(wish_item.item_create_date) }} </td>
+          <td> {{ toDate(wish_item.item_modified_date) }} </td>
 
-          <!-- This works!
-          <td v-if="display_mode === 'group'"> {{ wish_item.gifter_user_name }} </td>
-          <td v-if="display_mode === 'group'"> {{ wish_item.gifted_date }} </td>
-          -->
           <td> {{ wish_item.gifter_user_name }} </td>
           <td> {{ toDate(wish_item.gifted_date) }} </td>
 
-          <!-- If we're in editing mode, save or cancel the Edit -->
           <td v-if="editing === wish_item._id">
-            <!-- Save -->
-            <i @click="editWishItem(wish_item) && clearStatus()" class="far fa-save" title="Save"></i>
+            <i @click="editWishItem(wish_item)" class="far fa-save" title="Save"></i>
             &nbsp; &nbsp; &nbsp;
-            <!-- Cancel -->
             <i @click="cancelEdit(wish_item)" class="fas fa-undo" title="Cancel"></i>
           </td>
 
-          <!-- If we're display_mode 'self', allow Editing/Deleting if ungifted-->
-          <td v-else-if="display_mode === 'self' && !wish_item.gifter_user_name">
-            <!-- Edit -->
-            <i @click="editMode(wish_item)" class="far fa-edit" title="Edit"></i>
-            &nbsp; &nbsp; &nbsp;
-            <!-- Delete -->
+          <td v-else-if="display_mode === 'self'">
+            <template v-if="!wish_item.gifter_user_name">
+              <i @click="editMode(wish_item)" class="far fa-edit" title="Edit"></i>
+              &nbsp; &nbsp; &nbsp;
+            </template>
             <i @click="$emit('delete:wish_item', wish_item._id)" class="far fa-trash-alt" title="Delete"></i>
           </td>
-          <!-- If we're display_mode 'self', only allow Deleting if gifted -->
-          <td v-else-if="display_mode === 'self' && wish_item.gifter_user_name">
-            <!-- Delete -->
-            <i @click="$emit('delete:wish_item', wish_item._id)" class="far fa-trash-alt" title="Delete"></i>
-          </td>
-          
-          <!-- If we're display_mode 'group', allow Gifting for ungifted items -->
+
+          <!-- ungifted items in group view can be gifted -->
           <td v-else-if="display_mode === 'group' && !wish_item.gifter_user_name">
-            <!-- Gift -->
             <i @click="giftWishItem(wish_item)" class="fa fa-gift" title="Gift"></i>
           </td>
-          <td v-else>
-          </td>
+          <td v-else></td>
         </tr>
       </tbody>
     </table>
@@ -122,7 +99,7 @@
 
       // Local method which does the actual $emit call
       editWishItem(wish_item) {
-        if (wish_item.name === '') return
+        if (wish_item.item_name === '') return
         wish_item.item_modified_date = new Date().toUTCString()
         this.$emit('edit:wish_item', wish_item)
         this.editing = null

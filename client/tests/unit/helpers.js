@@ -4,11 +4,11 @@ import Vuex from 'vuex'
 export const localVue = createLocalVue()
 localVue.use(Vuex)
 
-export function createStore(username = 'testuser') {
+export function createStore(username = 'testuser', isAuthenticated = true) {
   return new Vuex.Store({
     state: {
       vuex_globalUser: username,
-      vuex_isAuthenticated: true
+      vuex_isAuthenticated: isAuthenticated
     },
     mutations: {
       set_vuex_globalUser(state, user) { state.vuex_globalUser = user },

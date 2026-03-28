@@ -1,6 +1,5 @@
-const API          = 'http://localhost:3000'
-const CURRENT_USER = 'test@example.com'
-const OTHER_USER   = 'other@example.com'
+import { API, TEST_USER as CURRENT_USER } from '../support/commands'
+const OTHER_USER = 'other@example.com'
 const ITEM_ID      = '507f1f77bcf86cd799439011'
 
 const otherItem = {
