@@ -39,6 +39,7 @@
         console.log('Executing GroupWishLists.vue getWishList()')
         try {
           const response = await fetch('http://localhost:3000/WishList/')
+          if (!response.ok) throw new Error(`Server error: ${response.status}`)
           const data     = await response.json()
           
           // Filter out user's items from the group's wish list
@@ -59,11 +60,12 @@
           console.log('Executing GroupWishLists.vue giftWishItem() for ' + updated_wish_item)
           try {
             const response = await
-            fetch('http://localhost:3000/WishList/update', {
+            fetch('http://localhost:3000/WishList/Update', {
               method:    'POST',
               body:       JSON.stringify(updated_wish_item),
               headers: { 'Content-type': 'application/json; charset=UTF-8' },
-            }) 
+            })
+            if (!response.ok) throw new Error(`Server error: ${response.status}`)
             await response.json()
             this.wish_list_array = this.wish_list_array.map(
               wish_item => wish_item._id === updated_wish_item._id ? updated_wish_item : wish_item

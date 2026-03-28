@@ -58,11 +58,12 @@
         console.log('Executing MyWishList.vue addWishItem()')
         try {
           const response = await
-          fetch('http://localhost:3000/WishList/create', {
+          fetch('http://localhost:3000/WishList/Create', {
             method:    'POST',
             body:       JSON.stringify(wish_item),
             headers: { 'Content-type': 'application/json; charset=UTF-8' }
-          }) 
+          })
+          if (!response.ok) throw new Error(`Server error: ${response.status}`)
           const data = await response.json()
           this.wish_list_array = [...this.wish_list_array, data]
         } catch (error) {
@@ -76,11 +77,12 @@
         console.log('Executing MyWishList.vue editWishItem() for ' + updated_wish_item)
         try {
           const response = await
-          fetch('http://localhost:3000/WishList/update', {
+          fetch('http://localhost:3000/WishList/Update', {
             method:    'POST',
             body:       JSON.stringify(updated_wish_item),
             headers: { 'Content-type': 'application/json; charset=UTF-8' },
-          }) 
+          })
+          if (!response.ok) throw new Error(`Server error: ${response.status}`)
           await response.json()
           this.wish_list_array = this.wish_list_array.map(
             wish_item => wish_item._id === updated_wish_item._id ? updated_wish_item : wish_item
@@ -98,9 +100,10 @@
           console.log('Executing App.vue deleteWishItem() for wish_item_id ' + wish_item_id)
           try {
             const response = await
-            fetch(`http://localhost:3000/WishList/delete/${wish_item_id}`, {
+            fetch(`http://localhost:3000/WishList/Delete/${wish_item_id}`, {
               method:    'POST'
             })
+            if (!response.ok) throw new Error(`Server error: ${response.status}`)
             await response.json()
             this.wish_list_array = this.wish_list_array.filter(
               wish_item => wish_item._id !== wish_item_id 
