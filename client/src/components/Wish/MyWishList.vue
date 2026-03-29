@@ -121,5 +121,11 @@
 </script>
 
 <style scoped>
-  /* Enter local styles here */
+  .small-container {
+    margin-left: 0;
+  }
+
+  h3 {
+    margin-top: 0;
+  }
 </style>

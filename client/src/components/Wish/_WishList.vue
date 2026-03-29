@@ -10,7 +10,6 @@
           <th>Price</th>
           <th>Store / URL</th>
           <th>Created Date</th>
-          <th>Modified Date</th>
           <th>Gifter</th>
           <th>Gifted Date</th>
           <th>Actions</th>
@@ -41,7 +40,6 @@
           </td>
 
           <td> {{ toDate(wish_item.item_create_date) }} </td>
-          <td> {{ toDate(wish_item.item_modified_date) }} </td>
 
           <td> {{ wish_item.gifter_user_name }} </td>
           <td> {{ toDate(wish_item.gifted_date) }} </td>
