@@ -7,6 +7,7 @@
 
 ## Frontend
 - [ ] Ability to hide/toggle the left-hand side navigation menu
+- [ ] Sort Wish List by column headings (e.g. Price)
 
 ## Backend / Infrastructure
 - [ ] Add `connect-mongo` session store — in-memory sessions reset on restart, required before production deploy

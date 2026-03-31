@@ -3,6 +3,7 @@ require('dotenv').config();
 // Import dependencies
 const crypto     = require('crypto');
 const express    = require('express');
+const MongoStore = require('connect-mongo');
 const cors       = require('cors');
 const mongoose   = require('mongoose');
 const bodyParser = require('body-parser');
@@ -47,7 +48,8 @@ app.options('/Groups/Leave',         cors());
 const express_session = require('express-session')({
   secret: process.env.SESSION_SECRET || 'changeme-replace-in-production',
   resave:  false,
-  saveUninitialized: false
+  saveUninitialized: false,
+  store: MongoStore.create({ mongoUrl: process.env.MONGO_URI || 'mongodb://localhost:27017/wishXlist' }),
 });
 app.use(express_session);
 
