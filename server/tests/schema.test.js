@@ -1,11 +1,13 @@
 const mongoose = require('mongoose');
 const wishListItemSchema = require('../schema/wishListItem_schema');
 const userSchemaDefinition = require('../schema/User_schema');
+const groupSchemaDefinition = require('../schema/Group_schema');
 
 // Create isolated models for unit testing schemas
 let schemaConn;
 let WishListItem;
 let User;
+let Group;
 
 beforeAll(async () => {
   schemaConn = await mongoose.createConnection(process.env.MONGO_URI);
@@ -18,12 +20,14 @@ beforeAll(async () => {
     last_name:  { type: String },
     email:      { type: String },
   });
-  User = schemaConn.model('UserTest', testUserSchema, 'UserTest');
+  User  = schemaConn.model('UserTest',  testUserSchema,      'UserTest');
+  Group = schemaConn.model('GroupTest', groupSchemaDefinition, 'GroupTest');
 });
 
 afterAll(async () => {
   await WishListItem.deleteMany({});
   await User.deleteMany({});
+  await Group.deleteMany({});
   await schemaConn.close();
 });
 
@@ -64,6 +68,43 @@ describe('WishListItem schema', () => {
     expect(saved._id).toBeDefined();
     expect(saved.user_name).toBe('testuser');
     expect(saved.item_name).toBe('Valid Item');
+  });
+});
+
+describe('Group schema', () => {
+  test('requires name', () => {
+    const g = new Group({ inviteCode: 'ABC123' });
+    const err = g.validateSync();
+    expect(err).toBeDefined();
+    expect(err.errors).toHaveProperty('name');
+  });
+
+  test('requires inviteCode', () => {
+    const g = new Group({ name: 'My Group' });
+    const err = g.validateSync();
+    expect(err).toBeDefined();
+    expect(err.errors).toHaveProperty('inviteCode');
+  });
+
+  test('members defaults to empty array', () => {
+    const g = new Group({ name: 'G', inviteCode: 'X' });
+    expect(g.members).toEqual([]);
+  });
+
+  test('createdAt defaults to current date', () => {
+    const before = new Date();
+    const g = new Group({ name: 'G', inviteCode: 'Y' });
+    const after = new Date();
+    expect(g.createdAt).toBeDefined();
+    expect(g.createdAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
+    expect(g.createdAt.getTime()).toBeLessThanOrEqual(after.getTime());
+  });
+
+  test('valid group can be saved', async () => {
+    const g = new Group({ name: 'Valid Group', inviteCode: 'VALIDCODE' });
+    const saved = await g.save();
+    expect(saved._id).toBeDefined();
+    expect(saved.members).toEqual([]);
   });
 });
 

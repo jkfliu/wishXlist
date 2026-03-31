@@ -2,10 +2,21 @@
   <div id="GroupWishLists" class="small-container">
     <h3>Group Wish Lists</h3>
     <i>View group Wish Lists and select items to gift!</i>
+
+    <div v-if="groups.length > 1" class="group-selector">
+      <label for="group-select">Viewing group: </label>
+      <select id="group-select" v-model="selectedGroupId" @change="loadWishListForGroup">
+        <option v-for="g in groups" :key="g._id" :value="g._id">{{ g.name }}</option>
+      </select>
+    </div>
+    <p v-else-if="groups.length === 1" class="group-label">
+      Viewing: <strong>{{ groups[0].name }}</strong>
+    </p>
+
     <!-- Pass down the array to the child component -->
-    <wish-list-table 
+    <wish-list-table
       v-bind:wish_list_array="wish_list_array"
-      v-bind:display_mode="display_mode"      
+      v-bind:display_mode="display_mode"
       @gift:wish_item="giftWishItem"/>
     <br>
   </div>
@@ -20,47 +31,67 @@
     components: {
       WishListTable,
     },
-    
+
     data() {
       return {
         wish_list_array: [],
         display_mode:    'group',
+        groups:          [],
+        selectedGroupId: null,
       }
     },
 
-    mounted() {
-      // Any functions to call upon initialisation?
-      this.getWishList()
+    async mounted() {
+      await this.fetchGroups()
+      if (this.selectedGroupId) {
+        await this.loadWishListForGroup()
+      }
     },
 
     methods: {
-      // Retrieve Wish Lists
-      async getWishList() {
-        console.log('Executing GroupWishLists.vue getWishList()')
+      async fetchGroups() {
         try {
-          const response = await fetch('http://localhost:3000/WishList/')
+          const response = await fetch('http://localhost:3000/Groups', { credentials: 'include' })
           if (!response.ok) throw new Error(`Server error: ${response.status}`)
-          const data     = await response.json()
-          
-          // Filter out user's items from the group's wish list
-          // i.e. a user should not be able to gift their own item (?)
-          var   user     = this.$store.state.vuex_globalUser
-          this.wish_list_array = data.filter(function(item) {
-              return item.user_name !== user
-          });
+          this.groups = await response.json()
+          if (this.groups.length > 0) {
+            this.selectedGroupId = this.groups[0]._id
+          }
         } catch (error) {
           console.error(error)
-          alert("getWishList(): Unable to retrieve Wish List items. Please contact Support")
+          alert('fetchGroups(): Unable to retrieve groups. Please contact Support')
         }
       },
 
-      // Gift an existing wish list item
+      async loadWishListForGroup() {
+        if (!this.selectedGroupId) return
+        try {
+          const mRes = await fetch(
+            `http://localhost:3000/Groups/Members?groupId=${this.selectedGroupId}`,
+            { credentials: 'include' }
+          )
+          if (!mRes.ok) throw new Error(`Server error: ${mRes.status}`)
+          const { members } = await mRes.json()
+
+          const wRes = await fetch('http://localhost:3000/WishList', { credentials: 'include' })
+          if (!wRes.ok) throw new Error(`Server error: ${wRes.status}`)
+          const data = await wRes.json()
+
+          const user = this.$store.state.vuex_globalUser
+          this.wish_list_array = data.filter(item =>
+            members.includes(item.user_name) && item.user_name !== user
+          )
+        } catch (error) {
+          console.error(error)
+          alert('loadWishListForGroup(): Unable to retrieve Wish List items. Please contact Support')
+        }
+      },
+
       async giftWishItem(updated_wish_item) {
         if (confirm('Are you sure you want to gift this item?\n(This action cannot be undone)')) {
           console.log('Executing GroupWishLists.vue giftWishItem() for ' + updated_wish_item)
           try {
-            const response = await
-            fetch('http://localhost:3000/WishList/Update', {
+            const response = await fetch('http://localhost:3000/WishList/Update', {
               method:    'POST',
               body:       JSON.stringify(updated_wish_item),
               headers: { 'Content-type': 'application/json; charset=UTF-8' },
@@ -89,5 +120,10 @@
 
   h3 {
     margin-top: 0;
+  }
+
+  .group-selector,
+  .group-label {
+    margin: 0.75rem 0;
   }
 </style>

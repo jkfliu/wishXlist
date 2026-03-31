@@ -20,6 +20,7 @@ jest.mock('@/components/Wish/MyWishList.vue',        () => ({ render: h => h('di
 jest.mock('@/components/Wish/GroupWishLists.vue',    () => ({ render: h => h('div') }))
 jest.mock('@/components/Login.vue',                  () => ({ render: h => h('div') }))
 jest.mock('@/components/Profile.vue',                () => ({ render: h => h('div') }))
+jest.mock('@/components/Content/Groups.vue',         () => ({ render: h => h('div') }))
 
 describe('router.js auth guard', () => {
   let router
@@ -54,6 +55,16 @@ describe('router.js auth guard', () => {
       mockStore.state.vuex_isAuthenticated = false
       const r = require('@/router.js').default
       r.push('/group-wish-lists').catch(() => {})
+      setTimeout(() => {
+        expect(r.currentRoute.path).toBe('/login')
+        done()
+      }, 50)
+    })
+
+    test('navigating to /groups redirects to /login', done => {
+      mockStore.state.vuex_isAuthenticated = false
+      const r = require('@/router.js').default
+      r.push('/groups').catch(() => {})
       setTimeout(() => {
         expect(r.currentRoute.path).toBe('/login')
         done()

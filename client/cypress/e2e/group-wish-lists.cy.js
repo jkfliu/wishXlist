@@ -1,6 +1,7 @@
 import { API, TEST_USER as CURRENT_USER } from '../support/commands'
 const OTHER_USER = 'other@example.com'
 const ITEM_ID      = '507f1f77bcf86cd799439011'
+const GROUP_ID     = '507f1f77bcf86cd799439022'
 
 const otherItem = {
   _id:               ITEM_ID,
@@ -13,10 +14,21 @@ const otherItem = {
   gifted_date:       null,
 }
 
+const myGroup = {
+  _id:        GROUP_ID,
+  name:       'Public',
+  inviteCode: 'PUBLIC',
+  members:    [CURRENT_USER, OTHER_USER],
+}
+
 beforeEach(() => {
-  cy.intercept('GET', `${API}/WishList/`, [otherItem]).as('getWishList')
+  cy.intercept('GET', `${API}/Groups`,                           [myGroup]).as('getGroups')
+  cy.intercept('GET', `${API}/Groups/Members?groupId=${GROUP_ID}`, { members: [CURRENT_USER, OTHER_USER] }).as('getMembers')
+  cy.intercept('GET', `${API}/WishList`,                         [otherItem]).as('getWishList')
   cy.mockAuth(CURRENT_USER)
   cy.visit('/group-wish-lists')
+  cy.wait('@getGroups')
+  cy.wait('@getMembers')
   cy.wait('@getWishList')
 })
 

@@ -7,6 +7,7 @@ import ShareTheMeal   from '@/components/Content/ShareTheMeal.vue'
 
 import MyWishList     from '@/components/Wish/MyWishList.vue'
 import GroupWishLists from '@/components/Wish/GroupWishLists.vue'
+import Groups         from '@/components/Content/Groups.vue'
 
 import Login          from '@/components/Login.vue'
 import Profile        from '@/components/Profile.vue'
@@ -30,6 +31,7 @@ const router = new Router({
     {path: '/login',            name: 'login',            component: Login,          meta: {allowAnonymous: true} },
     {path: '/feelin-lucky',     name: 'share-the-meal',   component: ShareTheMeal,   meta: {allowAnonymous: true} },
     {path: '/profile',          name: 'profile',          component: Profile,        },
+    {path: '/groups',           name: 'groups',           component: Groups,         },
     {path: '/my-wish-list',     name: 'my-wish-list',     component: MyWishList,     },
     {path: '/group-wish-lists', name: 'group-wish-lists', component: GroupWishLists, }
   ]

@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 // Import dependencies
+const crypto     = require('crypto');
 const express    = require('express');
 const cors       = require('cors');
 const mongoose   = require('mongoose');
@@ -30,8 +31,16 @@ app.use(cors({ origin: corsOrigins, credentials: true }));
 // GET  /Auth/OAuth/google/callback       - OAuth callback (server-side redirect)
 // GET  /Auth/Me                          - Return session user or 401
 // POST /Auth/Logout                      - Destroy session
+// GET  /Groups                           - Return all groups the authenticated user belongs to
+// POST /Groups/Create                    - Create a new group
+// POST /Groups/Join                      - Join a group by invite code
+// POST /Groups/Leave                     - Leave a group
+// GET  /Groups/Members                   - Return members of a group
 app.options('/WishList/:user',       cors());
 app.options('/WishList/Delete/:_id', cors());
+app.options('/Groups/Create',        cors());
+app.options('/Groups/Join',          cors());
+app.options('/Groups/Leave',         cors());
 
 
 // Set up Express-session, to help save session cookies (for authentication)
@@ -63,7 +72,18 @@ const wishListModel      = db_connection.model('WishList', wishListItemSchema, '
 const userSchema        = require('./schema/User_schema');
 const securityUserModel = db_connection.model('UserList', userSchema, 'UserList');
 
-db_connection.on('open',  ()      => { console.log('Connected to mongoDB wishXlist successfully!'); });
+const groupSchema = require('./schema/Group_schema');
+const groupModel  = db_connection.model('Groups', groupSchema, 'Groups');
+
+db_connection.on('open',  async () => {
+  console.log('Connected to mongoDB wishXlist successfully!');
+  // Ensure the public group exists
+  await groupModel.findOneAndUpdate(
+    { inviteCode: 'PUBLIC' },
+    { $setOnInsert: { name: 'Public', inviteCode: 'PUBLIC', members: [], createdAt: new Date() } },
+    { upsert: true, new: true }
+  );
+});
 db_connection.on('error', (error) => { console.log(error) });
 
 
@@ -87,6 +107,11 @@ passport.use(new GoogleStrategy({
         username:    email,
         displayName: profile.displayName,
       });
+      // Auto-enrol new user into the public group
+      await groupModel.findOneAndUpdate(
+        { inviteCode: 'PUBLIC' },
+        { $addToSet: { members: email } }
+      );
     }
     return done(null, user);
   } catch (err) {
@@ -172,6 +197,87 @@ app.post('/WishList/Delete/:_id', async (req, res) => {
   try {
     const data = await wishListModel.findByIdAndDelete(req.params._id);
     return res.json(data);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+
+/********************/
+/* ROUTES - GROUPS  */
+/********************/
+
+// Return all groups the authenticated user belongs to
+app.get('/Groups', async (req, res) => {
+  if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
+  try {
+    const data = await groupModel.find({ members: req.user.username });
+    return res.json(data);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Create a new group
+app.post('/Groups/Create', async (req, res) => {
+  if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
+  try {
+    const inviteCode = crypto.randomBytes(4).toString('hex').toUpperCase();
+    const data = await groupModel.create({
+      name:       req.body.name,
+      inviteCode: inviteCode,
+      members:    [req.user.username],
+    });
+    return res.json(data);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Join a group by invite code
+app.post('/Groups/Join', async (req, res) => {
+  if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
+  try {
+    const data = await groupModel.findOneAndUpdate(
+      { inviteCode: req.body.inviteCode },
+      { $addToSet: { members: req.user.username } },
+      { new: true }
+    );
+    if (!data) return res.status(404).json({ error: 'Invalid invite code' });
+    return res.json(data);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Leave a group
+app.post('/Groups/Leave', async (req, res) => {
+  if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
+  try {
+    const data = await groupModel.findByIdAndUpdate(
+      req.body.groupId,
+      { $pull: { members: req.user.username } },
+      { new: true }
+    );
+    if (!data) return res.status(404).json({ error: 'Group not found' });
+    return res.json(data);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Return members of a group
+app.get('/Groups/Members', async (req, res) => {
+  if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
+  try {
+    const data = await groupModel.findById(req.query.groupId);
+    if (!data) return res.status(404).json({ error: 'Group not found' });
+    return res.json({ members: data.members });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: err.message });

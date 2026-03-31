@@ -6,6 +6,8 @@ const { closeAllConnections } = require('./helpers');
 let app;
 let wishListModel;
 let userModel;
+let groupModel;
+let authAgent;
 
 beforeAll(async () => {
   app = require('../index');
@@ -15,6 +17,12 @@ beforeAll(async () => {
   const conn = mongoose.connections.find(c => c.models && c.models.WishList);
   wishListModel = conn.models.WishList;
   userModel     = conn.models.UserList;
+  groupModel    = conn.models.Groups;
+
+  // Create a test user and pre-authenticate an agent for the Groups route tests
+  await userModel.create({ googleId: 'err-cov-google', username: 'errcov@example.com', displayName: 'Err Cov' });
+  authAgent = request.agent(app);
+  await authAgent.post('/Auth/Test/FakeLogin').send({ username: 'errcov@example.com' });
 });
 
 afterAll(async () => {
@@ -37,6 +45,24 @@ describe('WishList routes - DB error', () => {
   ])('%s %s returns 500 on DB failure', async (method, url, modelMethod, body) => {
     jest.spyOn(wishListModel, modelMethod).mockRejectedValueOnce(new Error('DB down'));
     const req = request(app)[method.toLowerCase()](url);
+    if (body) req.send(body);
+    const res = await req;
+    expect(res.status).toBe(500);
+    expect(res.body).toHaveProperty('error', 'DB down');
+  });
+});
+
+
+describe('Groups routes - DB error', () => {
+  test.each([
+    ['GET',  '/Groups',                         'find',              null],
+    ['POST', '/Groups/Create',                  'create',            { name: 'Fail Group' }],
+    ['POST', '/Groups/Join',                    'findOneAndUpdate',  { inviteCode: 'X' }],
+    ['POST', '/Groups/Leave',                   'findByIdAndUpdate', { groupId: 'abc' }],
+    ['GET',  '/Groups/Members?groupId=abc123',  'findById',          null],
+  ])('%s %s returns 500 on DB failure', async (method, url, modelMethod, body) => {
+    jest.spyOn(groupModel, modelMethod).mockRejectedValueOnce(new Error('DB down'));
+    const req = authAgent[method.toLowerCase()](url);
     if (body) req.send(body);
     const res = await req;
     expect(res.status).toBe(500);
