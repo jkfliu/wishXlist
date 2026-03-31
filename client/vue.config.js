@@ -8,6 +8,10 @@ module.exports = {
       '/WishList': {
         target: 'http://localhost:3000',
         changeOrigin: true
+      },
+      '/Groups': {
+        target: 'http://localhost:3000',
+        changeOrigin: true
       }
     }
   }

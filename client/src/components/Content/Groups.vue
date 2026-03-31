@@ -68,7 +68,7 @@
     methods: {
       async fetchGroups() {
         try {
-          const response = await fetch('http://localhost:3000/Groups', { credentials: 'include' })
+          const response = await fetch('/Groups', { credentials: 'include' })
           if (!response.ok) throw new Error(`Server error: ${response.status}`)
           this.groups = await response.json()
         } catch (error) {
@@ -80,7 +80,7 @@
       async createGroup() {
         if (!this.newGroupName) return
         try {
-          const response = await fetch('http://localhost:3000/Groups/Create', {
+          const response = await fetch('/Groups/Create', {
             method:      'POST',
             credentials: 'include',
             headers:     { 'Content-type': 'application/json; charset=UTF-8' },
@@ -99,7 +99,7 @@
       async joinGroup() {
         if (!this.joinCode) return
         try {
-          const response = await fetch('http://localhost:3000/Groups/Join', {
+          const response = await fetch('/Groups/Join', {
             method:      'POST',
             credentials: 'include',
             headers:     { 'Content-type': 'application/json; charset=UTF-8' },
@@ -120,7 +120,7 @@
       async leaveGroup(groupId) {
         if (!confirm('Are you sure you want to leave this group?')) return
         try {
-          const response = await fetch('http://localhost:3000/Groups/Leave', {
+          const response = await fetch('/Groups/Leave', {
             method:      'POST',
             credentials: 'include',
             headers:     { 'Content-type': 'application/json; charset=UTF-8' },

@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 // Import dependencies
+const path       = require('path');
 const crypto     = require('crypto');
 const express    = require('express');
 const MongoStore = require('connect-mongo');
@@ -10,7 +11,7 @@ const bodyParser = require('body-parser');
 
 // Initialise express server
 const app = express();
-app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, '../client/dist')));
 
 // Set up BodyParser
 app.use(bodyParser.json());                           // Parse content-type - application/json
@@ -330,6 +331,12 @@ if (process.env.NODE_ENV === 'test') {
     });
   });
 }
+
+
+// Serve Vue SPA for all non-API routes (must be after all API routes)
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
+});
 
 
 // Export app for testing; only start listening when run directly

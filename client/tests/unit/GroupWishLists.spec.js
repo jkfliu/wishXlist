@@ -151,7 +151,7 @@ describe('GroupWishLists.vue — giftWishItem()', () => {
     await wrapper.vm.giftWishItem(item)
 
     expect(global.fetch).toHaveBeenCalledWith(
-      'http://localhost:3000/WishList/Update',
+      '/WishList/Update',
       expect.objectContaining({ method: 'POST' })
     )
   })

@@ -51,7 +51,7 @@
     methods: {
       async fetchGroups() {
         try {
-          const response = await fetch('http://localhost:3000/Groups', { credentials: 'include' })
+          const response = await fetch('/Groups', { credentials: 'include' })
           if (!response.ok) throw new Error(`Server error: ${response.status}`)
           this.groups = await response.json()
           if (this.groups.length > 0) {
@@ -66,16 +66,13 @@
       async loadWishListForGroup() {
         if (!this.selectedGroupId) return
         try {
-          const mRes = await fetch(
-            `http://localhost:3000/Groups/Members?groupId=${this.selectedGroupId}`,
-            { credentials: 'include' }
-          )
+          const [mRes, wRes] = await Promise.all([
+            fetch(`/Groups/Members?groupId=${this.selectedGroupId}`, { credentials: 'include' }),
+            fetch('/WishList', { credentials: 'include' }),
+          ])
           if (!mRes.ok) throw new Error(`Server error: ${mRes.status}`)
-          const { members } = await mRes.json()
-
-          const wRes = await fetch('http://localhost:3000/WishList', { credentials: 'include' })
           if (!wRes.ok) throw new Error(`Server error: ${wRes.status}`)
-          const data = await wRes.json()
+          const [{ members }, data] = await Promise.all([mRes.json(), wRes.json()])
 
           const user = this.$store.state.vuex_globalUser
           this.wish_list_array = data.filter(item =>
@@ -91,7 +88,7 @@
         if (confirm('Are you sure you want to gift this item?\n(This action cannot be undone)')) {
           console.log('Executing GroupWishLists.vue giftWishItem() for ' + updated_wish_item)
           try {
-            const response = await fetch('http://localhost:3000/WishList/Update', {
+            const response = await fetch('/WishList/Update', {
               method:    'POST',
               body:       JSON.stringify(updated_wish_item),
               headers: { 'Content-type': 'application/json; charset=UTF-8' },

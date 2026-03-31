@@ -1,0 +1,5 @@
+[build]
+  buildCommand = "cd client && npm ci --legacy-peer-deps && npm run build && cd ../server && npm ci --omit=dev"
+
+[deploy]
+  startCommand = "node server/index.js"

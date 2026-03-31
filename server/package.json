@@ -11,6 +11,7 @@
   },
   "author": "Jason Liu",
   "license": "ISC",
+  "engines": { "node": "18.x" },
   "dependencies": {
     "body-parser": "^1.20.3",
     "connect-ensure-login": "^0.1.1",

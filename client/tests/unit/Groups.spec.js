@@ -77,7 +77,7 @@ describe('Groups.vue — fetchGroups()', () => {
     createWrapper()
     await new Promise(r => setTimeout(r, 0))
     expect(global.fetch).toHaveBeenCalledWith(
-      'http://localhost:3000/Groups',
+      '/Groups',
       expect.objectContaining({ credentials: 'include' })
     )
   })
@@ -126,7 +126,7 @@ describe('Groups.vue — createGroup()', () => {
     wrapper.vm.newGroupName = 'Family'
     await wrapper.vm.createGroup()
     expect(global.fetch).toHaveBeenCalledWith(
-      'http://localhost:3000/Groups/Create',
+      '/Groups/Create',
       expect.objectContaining({
         method: 'POST',
         credentials: 'include',
@@ -182,7 +182,7 @@ describe('Groups.vue — joinGroup()', () => {
     wrapper.vm.joinCode = 'WORK1234'
     await wrapper.vm.joinGroup()
     expect(global.fetch).toHaveBeenCalledWith(
-      'http://localhost:3000/Groups/Join',
+      '/Groups/Join',
       expect.objectContaining({
         method: 'POST',
         credentials: 'include',
@@ -237,7 +237,7 @@ describe('Groups.vue — leaveGroup()', () => {
     await new Promise(r => setTimeout(r, 0))
     await wrapper.vm.leaveGroup('g2')
     expect(global.fetch).toHaveBeenCalledWith(
-      'http://localhost:3000/Groups/Leave',
+      '/Groups/Leave',
       expect.objectContaining({
         method: 'POST',
         credentials: 'include',

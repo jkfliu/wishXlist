@@ -9,6 +9,9 @@
 - [ ] Ability to hide/toggle the left-hand side navigation menu
 - [ ] Sort Wish List by column headings (e.g. Price)
 
+## Security
+- [ ] Audit for exposed secrets — ensure no credentials, API keys, or passwords are committed to the repo (check .env is in .gitignore, scan git history)
+
 ## Backend / Infrastructure
 - [ ] Add `connect-mongo` session store — in-memory sessions reset on restart, required before production deploy
 - [ ] Deploy to Railway or Render (persistent server required for sessions)

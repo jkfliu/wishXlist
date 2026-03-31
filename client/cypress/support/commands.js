@@ -1,6 +1,6 @@
 const TEST_USER = 'test@example.com'
 const TEST_DISPLAY_NAME = 'Test User'
-const API = 'http://localhost:3000'
+const API = ''
 
 Cypress.Commands.add('mockAuth', (user = TEST_USER) => {
   cy.intercept('GET', '/Auth/Me', {

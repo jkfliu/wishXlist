@@ -34,16 +34,14 @@
     },
 
     mounted() {
-      // Called upon initialisation
       this.getWishList(this.$store.state.vuex_globalUser)
     },
 
     methods: {
-      // Retrieve Wish List
       async getWishList(user) {
         console.log('Executing MyWishList.vue getWishList() for ' + user)
         try {
-          const response = await fetch('http://localhost:3000/WishList/' + user)
+          const response = await fetch('/WishList/' + user)
           const data     = await response.json()
           this.wish_list_array = data
         } catch (error) {
@@ -52,13 +50,11 @@
         }
       },
 
-      // Add an new wish list item
       async addWishItem(wish_item) {
-        wish_item.user_name = this.$store.state.vuex_globalUser // Use Vuex store
+        wish_item.user_name = this.$store.state.vuex_globalUser
         console.log('Executing MyWishList.vue addWishItem()')
         try {
-          const response = await
-          fetch('http://localhost:3000/WishList/Create', {
+          const response = await fetch('/WishList/Create', {
             method:    'POST',
             body:       JSON.stringify(wish_item),
             headers: { 'Content-type': 'application/json; charset=UTF-8' }
@@ -72,12 +68,10 @@
         }
       },
 
-      // Edit an existing wish list item
       async editWishItem(updated_wish_item) {
         console.log('Executing MyWishList.vue editWishItem() for ' + updated_wish_item)
         try {
-          const response = await
-          fetch('http://localhost:3000/WishList/Update', {
+          const response = await fetch('/WishList/Update', {
             method:    'POST',
             body:       JSON.stringify(updated_wish_item),
             headers: { 'Content-type': 'application/json; charset=UTF-8' },
@@ -93,20 +87,17 @@
         }
       },
 
-      // Delete an existing wish list item
-      // Ideally this should be a pop-up for user to confirm before deleting
       async deleteWishItem(wish_item_id) {
         if (confirm('Are you sure you want to delete this?\n(This action cannot be undone)')) {
           console.log('Executing App.vue deleteWishItem() for wish_item_id ' + wish_item_id)
           try {
-            const response = await
-            fetch(`http://localhost:3000/WishList/Delete/${wish_item_id}`, {
-              method:    'POST'
+            const response = await fetch(`/WishList/Delete/${wish_item_id}`, {
+              method: 'POST'
             })
             if (!response.ok) throw new Error(`Server error: ${response.status}`)
             await response.json()
             this.wish_list_array = this.wish_list_array.filter(
-              wish_item => wish_item._id !== wish_item_id 
+              wish_item => wish_item._id !== wish_item_id
             )
           } catch (error) {
             console.error(error)
@@ -115,9 +106,9 @@
         }
       }
 
-    } // End of methods()
+    }
 
-  } // End of export
+  }
 </script>
 
 <style scoped>
