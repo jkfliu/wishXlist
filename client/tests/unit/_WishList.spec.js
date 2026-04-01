@@ -6,22 +6,24 @@ const sampleWishItems = [
   {
     _id: '1',
     user_name: 'testuser',
-    item_name: 'Item One',
-    model: 'Model A',
-    price: '10.00',
-    store: 'Store A',
+    item_name: 'Banana',
+    model: 'Model B',
+    price: '20.00',
+    store: 'Store B',
+    item_create_date: '2024-01-02T00:00:00.000Z',
     gifter_user_name: '',
     gifted_date: null
   },
   {
     _id: '2',
     user_name: 'testuser',
-    item_name: 'Item Two',
-    model: 'Model B',
-    price: '20.00',
-    store: 'Store B',
+    item_name: 'Apple',
+    model: 'Model A',
+    price: '10.00',
+    store: 'Store A',
+    item_create_date: '2024-01-01T00:00:00.000Z',
     gifter_user_name: 'friend1',
-    gifted_date: new Date().toUTCString()
+    gifted_date: '2024-06-01T00:00:00.000Z'
   }
 ]
 
@@ -30,7 +32,7 @@ function createWrapper(store, displayMode = 'self', items = sampleWishItems) {
     localVue,
     store,
     propsData: {
-      wish_list_array: items,
+      wish_list_array: items.map(item => ({ ...item })),
       display_mode: displayMode
     }
   })
@@ -125,7 +127,7 @@ describe('_WishList.vue', () => {
     await editingRow.find('.fas.fa-undo').trigger('click')
 
     expect(wrapper.vm.editing).toBeNull()
-    expect(wrapper.vm.wish_list_array[0].item_name).toBe('Item One')
+    expect(wrapper.vm.wish_list_array[0].item_name).toBe('Banana')
   })
 
   test('saving an edit emits edit:wish_item and exits editing mode', async () => {
@@ -175,5 +177,77 @@ describe('_WishList.vue', () => {
     const result = wrapper.vm.toDate('2024-12-25T00:00:00.000Z')
     expect(typeof result).toBe('string')
     expect(result.length).toBeGreaterThan(0)
+  })
+})
+
+
+describe('_WishList.vue — sorting', () => {
+  let store
+
+  beforeEach(() => {
+    store = createStore('testuser')
+  })
+
+  test('sortedList defaults to original order (no sort applied)', () => {
+    const wrapper = createWrapper(store)
+    expect(wrapper.vm.sortedList[0]._id).toBe('1')
+    expect(wrapper.vm.sortedList[1]._id).toBe('2')
+  })
+
+  test('clicking item_name header sorts ascending (A→Z)', async () => {
+    const wrapper = createWrapper(store)
+    await wrapper.find('th[data-sort="item_name"]').trigger('click')
+    expect(wrapper.vm.sortedList[0].item_name).toBe('Apple')
+    expect(wrapper.vm.sortedList[1].item_name).toBe('Banana')
+  })
+
+  test('clicking item_name header twice sorts descending (Z→A)', async () => {
+    const wrapper = createWrapper(store)
+    await wrapper.find('th[data-sort="item_name"]').trigger('click')
+    await wrapper.find('th[data-sort="item_name"]').trigger('click')
+    expect(wrapper.vm.sortedList[0].item_name).toBe('Banana')
+    expect(wrapper.vm.sortedList[1].item_name).toBe('Apple')
+  })
+
+  test('clicking price header sorts numerically ascending', async () => {
+    const wrapper = createWrapper(store)
+    await wrapper.find('th[data-sort="price"]').trigger('click')
+    expect(wrapper.vm.sortedList[0].price).toBe('10.00')
+    expect(wrapper.vm.sortedList[1].price).toBe('20.00')
+  })
+
+  test('clicking a different header resets to ascending', async () => {
+    const wrapper = createWrapper(store)
+    await wrapper.find('th[data-sort="item_name"]').trigger('click')
+    await wrapper.find('th[data-sort="item_name"]').trigger('click') // now descending
+    await wrapper.find('th[data-sort="price"]').trigger('click')     // new column → ascending
+    expect(wrapper.vm.sortAsc).toBe(true)
+    expect(wrapper.vm.sortKey).toBe('price')
+  })
+
+  test('unsorted columns show ↕ indicator', () => {
+    const wrapper = createWrapper(store)
+    expect(wrapper.find('th[data-sort="item_name"]').text()).toContain('↕')
+  })
+
+  test('active sort column shows ▲ indicator', async () => {
+    const wrapper = createWrapper(store)
+    await wrapper.find('th[data-sort="item_name"]').trigger('click')
+    expect(wrapper.find('th[data-sort="item_name"]').text()).toContain('▲')
+  })
+
+  test('descending sort shows ▼ indicator', async () => {
+    const wrapper = createWrapper(store)
+    await wrapper.find('th[data-sort="item_name"]').trigger('click')
+    await wrapper.find('th[data-sort="item_name"]').trigger('click')
+    expect(wrapper.find('th[data-sort="item_name"]').text()).toContain('▼')
+  })
+
+  test('sorting by gifted_date sorts chronologically', async () => {
+    const wrapper = createWrapper(store)
+    await wrapper.find('th[data-sort="gifted_date"]').trigger('click')
+    // null gifted_date sorts last
+    expect(wrapper.vm.sortedList[0].gifted_date).toBeTruthy()
+    expect(wrapper.vm.sortedList[1].gifted_date).toBeFalsy()
   })
 })

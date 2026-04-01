@@ -12,7 +12,3 @@
 ## Security
 - [ ] Audit for exposed secrets — ensure no credentials, API keys, or passwords are committed to the repo (check .env is in .gitignore, scan git history)
 
-## Backend / Infrastructure
-- [ ] Add `connect-mongo` session store — in-memory sessions reset on restart, required before production deploy
-- [ ] Deploy to Railway or Render (persistent server required for sessions)
-- [ ] Set `SERVER_URL` and `FRONTEND_URL` env vars correctly on deploy

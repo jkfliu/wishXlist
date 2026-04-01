@@ -5,19 +5,19 @@
       <thead>
         <tr>
           <th>User</th>
-          <th>Item Name*</th>
-          <th>Model</th>
-          <th>Price</th>
-          <th>Store / URL</th>
-          <th>Created Date</th>
-          <th>Gifter</th>
-          <th>Gifted Date</th>
+          <th data-sort="item_name"  @click="setSort('item_name')">Item Name* {{ sortIndicator('item_name') }}</th>
+          <th data-sort="model"      @click="setSort('model')">Model {{ sortIndicator('model') }}</th>
+          <th data-sort="price"      @click="setSort('price')">Price {{ sortIndicator('price') }}</th>
+          <th data-sort="store"      @click="setSort('store')">Store / URL {{ sortIndicator('store') }}</th>
+          <th data-sort="item_create_date" @click="setSort('item_create_date')">Created Date {{ sortIndicator('item_create_date') }}</th>
+          <th data-sort="gifter_user_name" @click="setSort('gifter_user_name')">Gifter {{ sortIndicator('gifter_user_name') }}</th>
+          <th data-sort="gifted_date" @click="setSort('gifted_date')">Gifted Date {{ sortIndicator('gifted_date') }}</th>
           <th>Actions</th>
         </tr>
       </thead>
 
       <tbody>
-        <tr v-for="wish_item in wish_list_array" :key="wish_item._id">
+        <tr v-for="wish_item in sortedList" :key="wish_item._id">
           <!-- If you wish to display the MongoDB _id -->
           <!-- <td> {{ wish_item._id }} </td> -->
 
@@ -82,8 +82,34 @@
 
     data() {
       return {
-        // State
-        editing: null
+        editing: null,
+        sortKey: null,
+        sortAsc: true,
+      }
+    },
+
+    computed: {
+      sortedList() {
+        if (!this.sortKey) return this.wish_list_array
+        const key = this.sortKey
+        const asc = this.sortAsc
+        return [...this.wish_list_array].sort((a, b) => {
+          let vA = a[key] ?? ''
+          let vB = b[key] ?? ''
+          if (key === 'price') {
+            vA = parseFloat(vA) || 0
+            vB = parseFloat(vB) || 0
+          } else if (key === 'item_create_date' || key === 'item_modified_date' || key === 'gifted_date') {
+            vA = vA ? new Date(vA).getTime() : (asc ? Infinity : -Infinity)
+            vB = vB ? new Date(vB).getTime() : (asc ? Infinity : -Infinity)
+          } else {
+            vA = vA.toString().toLowerCase()
+            vB = vB.toString().toLowerCase()
+          }
+          if (vA < vB) return asc ? -1 : 1
+          if (vA > vB) return asc ? 1 : -1
+          return 0
+        })
       }
     },
 
@@ -126,10 +152,27 @@
         } catch {
           return false
         }
-      }
-    } 
+      },
+
+      setSort(key) {
+        if (this.sortKey === key) {
+          this.sortAsc = !this.sortAsc
+        } else {
+          this.sortKey = key
+          this.sortAsc = true
+        }
+      },
+
+      sortIndicator(key) {
+        if (this.sortKey !== key) return '↕'
+        return this.sortAsc ? '▲' : '▼'
+      },
+    }
   }
 </script>
 
 <style scoped>
+  th {
+    white-space: nowrap;
+  }
 </style>
