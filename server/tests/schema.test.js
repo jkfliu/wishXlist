@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const wishListItemSchema = require('../schema/wishListItem_schema');
+const wishListItemSchema = require('../schema/WishListItem_schema');
 const userSchemaDefinition = require('../schema/User_schema');
 const groupSchemaDefinition = require('../schema/Group_schema');
 

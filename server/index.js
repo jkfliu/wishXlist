@@ -68,7 +68,7 @@ app.use(passport.session());
 mongoose.set('debug', true);
 var db_connection = mongoose.createConnection(process.env.MONGO_URI || 'mongodb://localhost:27017/wishXlist');
 
-const wishListItemSchema = require('./schema/wishListItem_schema');
+const wishListItemSchema = require('./schema/WishListItem_schema');
 // Specifying 3rd argument (mongoDB collection) avoids mongoose default pluralizing behaviour
 const wishListModel      = db_connection.model('WishList', wishListItemSchema, 'WishList');
 
