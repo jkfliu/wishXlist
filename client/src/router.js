@@ -3,6 +3,7 @@ import Router         from 'vue-router'
 
 import WishxlistHome  from '@/components/Content/WishxlistHome.vue'
 import AboutWishxlist from '@/components/Content/AboutWishxlist.vue'
+import PrivacyPolicy  from '@/components/Content/PrivacyPolicy.vue'
 import ShareTheMeal   from '@/components/Content/ShareTheMeal.vue'
 
 import MyWishList     from '@/components/Wish/MyWishList.vue'
@@ -28,6 +29,7 @@ const router = new Router({
     // meta
     {path: '/',                 name: 'home',             component: WishxlistHome,  meta: {allowAnonymous: true} },
     {path: '/about',            name: 'about',            component: AboutWishxlist, meta: {allowAnonymous: true} },
+    {path: '/privacy',          name: 'privacy',          component: PrivacyPolicy,  meta: {allowAnonymous: true} },
     {path: '/login',            name: 'login',            component: Login,          meta: {allowAnonymous: true} },
     {path: '/feelin-lucky',     name: 'share-the-meal',   component: ShareTheMeal,   meta: {allowAnonymous: true} },
     {path: '/profile',          name: 'profile',          component: Profile,        },

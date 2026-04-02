@@ -68,5 +68,6 @@
     padding: 4px 8px;
     margin-right: 4px;
     vertical-align: middle;
+    color: inherit;
   }
 </style>
