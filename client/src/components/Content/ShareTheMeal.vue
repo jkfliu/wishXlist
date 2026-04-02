@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="small-container">
     <h3>Feeling Generous?</h3>
     <br>Donate to <u><a href="https://sharethemeal.org/en/" target="new">ShareTheMeal</a></u>, 
         an initiative of the <b>United Nation's</b> World Food Programme to feed a child for 80&cent; a day, 
@@ -15,3 +15,13 @@
     name: 'share-the-meal'
   }
 </script>
+
+<style scoped>
+  .small-container {
+    margin-left: 0;
+  }
+
+  h3 {
+    margin-top: 0;
+  }
+</style>

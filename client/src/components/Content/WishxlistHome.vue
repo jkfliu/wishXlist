@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="small-container">
     <h3>Welcome to wishXlist!</h3>
     <br>This is a site for sharing your wish lists. No more racking your brains to find the 'perfect gift', 
         or having stashes of unwanted gifts in the house.
@@ -18,3 +18,13 @@
     name: 'home'
   }
 </script>
+
+<style scoped>
+  .small-container {
+    margin-left: 0;
+  }
+
+  h3 {
+    margin-top: 0;
+  }
+</style>

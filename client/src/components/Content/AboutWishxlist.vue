@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="small-container">
     <h3>About wishXlist</h3>
     <br>You're currently viewing wishXlist <i>beta</i> version (not for general release).
     <br>Best experienced on Google Chrome browsers.
@@ -19,3 +19,13 @@
     name: 'about-wishxlist'
   }
 </script>
+
+<style scoped>
+  .small-container {
+    margin-left: 0;
+  }
+
+  h3 {
+    margin-top: 0;
+  }
+</style>
