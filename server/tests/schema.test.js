@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const wishListItemSchema = require('../schema/WishListItem_schema');
-const userSchemaDefinition = require('../schema/User_schema');
+const userSchema         = require('../schema/User_schema');
 const groupSchemaDefinition = require('../schema/Group_schema');
 
 // Create isolated models for unit testing schemas
@@ -14,13 +14,7 @@ beforeAll(async () => {
 
   WishListItem = schemaConn.model('WishListItemTest', wishListItemSchema, 'WishListItemTest');
 
-  const testUserSchema = new mongoose.Schema({
-    username:   { type: String, required: true },
-    first_name: { type: String },
-    last_name:  { type: String },
-    email:      { type: String },
-  });
-  User  = schemaConn.model('UserTest',  testUserSchema,      'UserTest');
+  User  = schemaConn.model('UserTest', userSchema, 'UserTest');
   Group = schemaConn.model('GroupTest', groupSchemaDefinition, 'GroupTest');
 });
 
@@ -118,6 +112,24 @@ describe('User schema', () => {
 
   test('valid user can be created with just username', async () => {
     const user = new User({ username: 'validuser' });
+    const err = user.validateSync();
+    expect(err).toBeUndefined();
+  });
+
+  test('googleId is not required', () => {
+    const user = new User({ username: 'fb@example.com', facebookId: 'fb-123' });
+    const err = user.validateSync();
+    expect(err).toBeUndefined();
+  });
+
+  test('facebookId-only user is valid', () => {
+    const user = new User({ username: 'fb@example.com', facebookId: 'fb-456' });
+    const err = user.validateSync();
+    expect(err).toBeUndefined();
+  });
+
+  test('user with both googleId and facebookId is valid', () => {
+    const user = new User({ username: 'both@example.com', googleId: 'g-123', facebookId: 'fb-789' });
     const err = user.validateSync();
     expect(err).toBeUndefined();
   });

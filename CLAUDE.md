@@ -69,6 +69,8 @@ API routes:
 | POST | `/WishList/Delete/:_id` | Delete item |
 | GET | `/Auth/OAuth/google` | Initiate Google OAuth flow |
 | GET | `/Auth/OAuth/google/callback` | OAuth callback — redirects to frontend |
+| GET | `/Auth/OAuth/facebook` | Initiate Facebook OAuth flow |
+| GET | `/Auth/OAuth/facebook/callback` | OAuth callback — redirects to frontend |
 | GET | `/Auth/Me` | Return session user or 401 |
 | POST | `/Auth/Logout` | Destroy session |
 | GET | `/Groups` | Groups the authenticated user belongs to |
@@ -81,7 +83,7 @@ API routes:
 
 Vue 2 SPA with Vuex and Vue Router.
 
-**Auth flow:** `Login.vue` has a "Sign in with Google" link pointing to `/Auth/OAuth/google`. After the OAuth callback, the server redirects to `/login?oauth_username=<email>`. `Login.vue`'s `mounted()` hook reads that query param and commits `set_vuex_globalUser` and `set_vuex_isAuthenticated` to the Vuex store. The router guard in `router.js` redirects unauthenticated users away from routes that don't have `meta.allowAnonymous: true`.
+**Auth flow:** `Login.vue` has "Sign in with Google" and "Continue with Facebook" links. Both OAuth flows redirect to `/login?oauth_username=<email>` after the server callback. `Login.vue`'s `mounted()` hook reads that query param and commits `set_vuex_globalUser` and `set_vuex_isAuthenticated` to the Vuex store. The router guard in `router.js` redirects unauthenticated users away from routes that don't have `meta.allowAnonymous: true`.
 
 **Wish list views:**
 - `MyWishList.vue` — fetches the current user's items, hosts `_WishItemForm.vue` (add) and `_WishList.vue` (display/edit/delete). Uses `display_mode: 'self'`.
@@ -95,4 +97,4 @@ Vue 2 SPA with Vuex and Vue Router.
 
 ## Registering users
 
-There is no signup UI. Users are automatically created in the `UserList` collection the first time they sign in via Google OAuth (using their Google email as `username`).
+There is no signup UI. Users are automatically created in the `UserList` collection the first time they sign in via Google or Facebook OAuth (using their email as `username`). If a user signs in with Facebook using the same email as an existing Google account, the accounts are linked (the `facebookId` field is added to the existing record). `googleId` and `facebookId` are both optional and `sparse: true` on the unique index, so either can be null.

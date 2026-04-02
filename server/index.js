@@ -31,6 +31,8 @@ app.use(cors({ origin: corsOrigins, credentials: true }));
 // POST /WishList/Delete/:_id             - Delete wishlist item
 // GET  /Auth/OAuth/google                - Initiate Google OAuth
 // GET  /Auth/OAuth/google/callback       - OAuth callback (server-side redirect)
+// GET  /Auth/OAuth/facebook              - Initiate Facebook OAuth
+// GET  /Auth/OAuth/facebook/callback     - OAuth callback (server-side redirect)
 // GET  /Auth/Me                          - Return session user or 401
 // POST /Auth/Logout                      - Destroy session
 // GET  /Groups                           - Return all groups the authenticated user belongs to
@@ -94,7 +96,10 @@ db_connection.on('error', (error) => { console.log(error) });
 /* PASSPORT - GOOGLE     */
 /*************************/
 
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const GoogleStrategy   = require('passport-google-oauth20').Strategy;
+const FacebookStrategy = require('passport-facebook').Strategy;
+
+const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
 
 passport.use(new GoogleStrategy({
   clientID:     process.env.GOOGLE_CLIENT_ID,
@@ -105,22 +110,64 @@ passport.use(new GoogleStrategy({
     const email = profile.emails[0].value;
     let user = await securityUserModel.findOne({ googleId: profile.id });
     if (!user) {
-      user = await securityUserModel.create({
-        googleId:    profile.id,
-        username:    email,
-        displayName: profile.displayName,
-      });
-      // Auto-enrol new user into the public group
-      await groupModel.findOneAndUpdate(
-        { inviteCode: 'PUBLIC' },
-        { $addToSet: { members: email } }
-      );
+      [user] = await Promise.all([
+        securityUserModel.create({
+          googleId:    profile.id,
+          username:    email,
+          displayName: profile.displayName,
+        }),
+        groupModel.findOneAndUpdate(
+          { inviteCode: 'PUBLIC' },
+          { $addToSet: { members: email } }
+        ),
+      ]);
     }
     return done(null, user);
   } catch (err) {
     return done(err);
   }
 }));
+
+passport.use(new FacebookStrategy(
+  {
+    clientID:      process.env.FACEBOOK_APP_ID,
+    clientSecret:  process.env.FACEBOOK_APP_SECRET,
+    callbackURL:   (process.env.SERVER_URL || 'http://localhost:3000') + '/Auth/OAuth/facebook/callback',
+    profileFields: ['id', 'emails', 'displayName'],
+  },
+  async (_accessToken, _refreshToken, profile, done) => {
+    try {
+      const email = profile.emails?.[0]?.value;
+      if (!email) return done(null, false);
+
+      let user = await securityUserModel.findOne({ facebookId: profile.id });
+      if (!user) {
+        // Link to existing account if same email (e.g. user already signed in via Google)
+        user = await securityUserModel.findOneAndUpdate(
+          { username: email },
+          { $set: { facebookId: profile.id } },
+          { new: true }
+        );
+        if (!user) {
+          [user] = await Promise.all([
+            securityUserModel.create({
+              facebookId:  profile.id,
+              username:    email,
+              displayName: profile.displayName,
+            }),
+            groupModel.findOneAndUpdate(
+              { inviteCode: 'PUBLIC' },
+              { $addToSet: { members: email } }
+            ),
+          ]);
+        }
+      }
+      return done(null, user);
+    } catch (err) {
+      return done(err);
+    }
+  }
+));
 
 passport.serializeUser((user, done) => done(null, user._id));
 
@@ -299,9 +346,21 @@ app.get('/Auth/OAuth/google',
 
 // Google OAuth callback — redirects client to /login?oauth_username=<email>
 app.get('/Auth/OAuth/google/callback',
-  passport.authenticate('google', { session: true, failureRedirect: '/' }),
+  passport.authenticate('google', { failureRedirect: `${frontendUrl}/login?error=oauth_failed` }),
   (req, res) => {
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
+    res.redirect(`${frontendUrl}/login?oauth_username=${encodeURIComponent(req.user.username)}`);
+  }
+);
+
+// Initiate Facebook OAuth flow
+app.get('/Auth/OAuth/facebook',
+  passport.authenticate('facebook', { scope: ['email'] })
+);
+
+// Facebook OAuth callback — redirects client to /login?oauth_username=<email>
+app.get('/Auth/OAuth/facebook/callback',
+  passport.authenticate('facebook', { failureRedirect: `${frontendUrl}/login?error=oauth_failed` }),
+  (req, res) => {
     res.redirect(`${frontendUrl}/login?oauth_username=${encodeURIComponent(req.user.username)}`);
   }
 );

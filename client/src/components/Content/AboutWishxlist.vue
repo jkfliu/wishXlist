@@ -8,7 +8,6 @@
     <br>
     <br>Further work to be done:
       <ul>
-        <li>Facebook OAuth</li>
         <li>Optimise for mobile viewing</li>
       </ul>
    
