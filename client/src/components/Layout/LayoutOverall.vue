@@ -5,7 +5,7 @@
     </header>
 
     <section class="main hbox space-between">
-      <nav v-if="showNav">
+      <nav v-if="$store.state.navVisible">
         <slot name="nav" class="vbox h-100">Layout Overall - Navigation</slot>
       </nav>
       <content>
@@ -22,19 +22,6 @@
 <script>
   export default {
     name: 'layout-overall',
-    created () {
-//      this.$eventHub.$on('toggle-nav', this.toggleNav)
-    },
-    data () {
-      return {
-        showNav: true,
-      }
-    },
-    methods: {
-      toggleNav () {
-        this.showNav = !this.showNav
-      },
-    }
   }
 </script>
 

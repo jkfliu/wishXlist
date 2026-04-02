@@ -1,6 +1,7 @@
 <template>
   <div class="topnav">
     <div class="menu-left">
+      <button class="nav-toggle-btn" @click="$store.commit('toggle_nav_visible')" title="Toggle navigation">&#9776;</button>
       <router-link :to="{name: 'home'}">
         <img src="wish_X_list.logo.jpg" alt="wishXlist" height="80" align="center">
       </router-link>
@@ -58,5 +59,14 @@
 
   .logout-link {
     cursor: pointer;
+  }
+  .nav-toggle-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    margin-right: 4px;
+    vertical-align: middle;
   }
 </style>

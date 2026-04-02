@@ -60,6 +60,6 @@ describe('Login.vue', () => {
     const wrapper = createWrapper(store, { error: 'oauth_failed' })
     await wrapper.vm.$nextTick()
     expect(wrapper.find('.error-message').exists()).toBe(true)
-    expect(wrapper.vm.error_message).toContain('Google sign-in failed')
+    expect(wrapper.vm.error_message).toContain('Sign-in failed')
   })
 })

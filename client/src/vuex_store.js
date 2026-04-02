@@ -7,7 +7,8 @@ Vue.use(Vuex)
 const store = new Vuex.Store({
   state: {
     vuex_globalUser:      localStorage.getItem('vuex_globalUser')      || '',
-    vuex_isAuthenticated: localStorage.getItem('vuex_isAuthenticated') === 'true'
+    vuex_isAuthenticated: localStorage.getItem('vuex_isAuthenticated') === 'true',
+    navVisible:           localStorage.getItem('navVisible') !== 'false',
   },
 
   mutations: {
@@ -18,7 +19,11 @@ const store = new Vuex.Store({
     set_vuex_isAuthenticated(state, bool) {
       state.vuex_isAuthenticated = bool
       localStorage.setItem('vuex_isAuthenticated', String(bool))
-    }
+    },
+    toggle_nav_visible(state) {
+      state.navVisible = !state.navVisible
+      localStorage.setItem('navVisible', String(state.navVisible))
+    },
   },
 
   actions: {
