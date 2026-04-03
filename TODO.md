@@ -17,5 +17,5 @@
 - [x] Optimise for mobile viewing
 
 ## Security
-- [ ] Audit for exposed secrets — ensure no credentials, API keys, or passwords are committed to the repo (check .env is in .gitignore, scan git history)
+- [x] Audit for exposed secrets — ensure no credentials, API keys, or passwords are committed to the repo (check .env is in .gitignore, scan git history)
 

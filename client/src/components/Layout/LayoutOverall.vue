@@ -8,11 +8,6 @@
       <nav v-if="$store.state.navVisible">
         <slot name="nav" class="vbox h-100">Layout Overall - Navigation</slot>
       </nav>
-      <div
-        v-if="$store.state.navVisible"
-        class="nav-backdrop"
-        @click="$store.commit('toggle_nav_visible')"
-      />
       <content>
         <slot name="content">Content here</slot>
       </content>
@@ -115,30 +110,5 @@
     -ms-flex:     1;
     flex:         1;
     overflow:     auto;
-  }
-
-  .nav-backdrop {
-    display: none;
-  }
-
-  @media (max-width: 600px) {
-    nav {
-      position: fixed;
-      top: 0;
-      left: 0;
-      height: 100%;
-      width: 200px;
-      z-index: 200;
-      background: rgba(238, 238, 238, 0.8);
-      flex: none;
-    }
-
-    .nav-backdrop {
-      display: block;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.4);
-      z-index: 199;
-    }
   }
 </style>

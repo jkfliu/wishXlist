@@ -47,9 +47,13 @@ app.options('/Groups/Join',          cors());
 app.options('/Groups/Leave',         cors());
 
 
+if (!process.env.SESSION_SECRET && process.env.NODE_ENV !== 'test') {
+  throw new Error('SESSION_SECRET environment variable is required');
+}
+
 // Set up Express-session, to help save session cookies (for authentication)
 const express_session = require('express-session')({
-  secret: process.env.SESSION_SECRET || 'changeme-replace-in-production',
+  secret: process.env.SESSION_SECRET || 'test-secret',
   resave:  false,
   saveUninitialized: false,
   store: MongoStore.create({ mongoUrl: process.env.MONGO_URI || 'mongodb://localhost:27017/wishXlist' }),
