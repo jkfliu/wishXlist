@@ -110,17 +110,11 @@ passport.use(new GoogleStrategy({
     const email = profile.emails[0].value;
     let user = await securityUserModel.findOne({ googleId: profile.id });
     if (!user) {
-      [user] = await Promise.all([
-        securityUserModel.create({
-          googleId:    profile.id,
-          username:    email,
-          displayName: profile.displayName,
-        }),
-        groupModel.findOneAndUpdate(
-          { inviteCode: 'PUBLIC' },
-          { $addToSet: { members: email } }
-        ),
-      ]);
+      user = await securityUserModel.create({
+        googleId:    profile.id,
+        username:    email,
+        displayName: profile.displayName,
+      });
     }
     return done(null, user);
   } catch (err) {
@@ -149,17 +143,11 @@ passport.use(new FacebookStrategy(
           { new: true }
         );
         if (!user) {
-          [user] = await Promise.all([
-            securityUserModel.create({
-              facebookId:  profile.id,
-              username:    email,
-              displayName: profile.displayName,
-            }),
-            groupModel.findOneAndUpdate(
-              { inviteCode: 'PUBLIC' },
-              { $addToSet: { members: email } }
-            ),
-          ]);
+          user = await securityUserModel.create({
+            facebookId:  profile.id,
+            username:    email,
+            displayName: profile.displayName,
+          });
         }
       }
       return done(null, user);

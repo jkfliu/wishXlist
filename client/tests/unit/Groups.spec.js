@@ -7,8 +7,12 @@ const sampleGroups = [
   { _id: 'g2', name: 'My Friends', inviteCode: 'A1B2C3D4', members: ['me@example.com'] },
 ]
 
-function createWrapper(store = createStore('me@example.com')) {
-  return shallowMount(Groups, { localVue, store })
+function createWrapper(store = createStore('me@example.com'), query = {}) {
+  return shallowMount(Groups, {
+    localVue,
+    store,
+    mocks: { $route: { query } },
+  })
 }
 
 beforeEach(() => {
@@ -61,12 +65,12 @@ describe('Groups.vue — rendering', () => {
     expect(publicRow.find('.show-code-btn').exists()).toBe(false)
   })
 
-  test('non-public group renders a Show code button', async () => {
+  test('non-public group renders an invite code input', async () => {
     const wrapper = createWrapper()
     await new Promise(r => setTimeout(r, 0))
     const rows = wrapper.findAll('tbody tr')
     const friendsRow = rows.at(1) // second is My Friends
-    expect(friendsRow.find('.show-code-btn').exists()).toBe(true)
+    expect(friendsRow.find('.invite-code-input').exists()).toBe(true)
   })
 })
 
@@ -214,6 +218,18 @@ describe('Groups.vue — joinGroup()', () => {
     await wrapper.vm.joinGroup()
     expect(wrapper.vm.joinCode).toBe('')
   })
+
+  test('joinGroup with explicit code (e.g. PUBLIC) does not clear joinCode input', async () => {
+    const publicGroup = { _id: 'g1', name: 'Public', inviteCode: 'PUBLIC', members: ['me@example.com'] }
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => [] })
+      .mockResolvedValueOnce({ ok: true, json: async () => publicGroup })
+    const wrapper = createWrapper()
+    await new Promise(r => setTimeout(r, 0))
+    wrapper.vm.joinCode = 'something'
+    await wrapper.vm.joinGroup('PUBLIC')
+    expect(wrapper.vm.joinCode).toBe('something')
+  })
 })
 
 
@@ -259,23 +275,18 @@ describe('Groups.vue — leaveGroup()', () => {
 })
 
 
-describe('Groups.vue — toggleCode()', () => {
+describe('Groups.vue — copyUrl()', () => {
   beforeEach(() => {
     global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => sampleGroups })
+    Object.assign(navigator, { clipboard: { writeText: jest.fn() } })
   })
 
-  test('sets showingCodeFor to the group _id on first call', async () => {
+  test('writes invite URL to clipboard', async () => {
     const wrapper = createWrapper()
     await new Promise(r => setTimeout(r, 0))
-    wrapper.vm.toggleCode('g2')
-    expect(wrapper.vm.showingCodeFor).toBe('g2')
-  })
-
-  test('sets showingCodeFor back to null on second call (same group)', async () => {
-    const wrapper = createWrapper()
-    await new Promise(r => setTimeout(r, 0))
-    wrapper.vm.toggleCode('g2')
-    wrapper.vm.toggleCode('g2')
-    expect(wrapper.vm.showingCodeFor).toBeNull()
+    wrapper.vm.copyUrl('A1B2C3D4')
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+      expect.stringContaining('/groups?join=A1B2C3D4')
+    )
   })
 })

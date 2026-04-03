@@ -1,44 +1,59 @@
 <template>
   <div id="groups-page" class="small-container">
     <h3>My Groups</h3>
+    <p><i>Add yourself to a Group to share your Wish List</i>
+    <br><i>Adding to the Public group means everyone can see your wishes</i></p>
 
     <section class="group-create">
-      <h4>Create a New Group</h4>
+      <h5>Create a New Group</h5>
       <input v-model="newGroupName" type="text" placeholder="Group name" />
       <button @click="createGroup">Create</button>
     </section>
 
     <section class="group-join">
-      <h4>Join a Group</h4>
+      <h5>Join a Group</h5>
       <input v-model="joinCode" type="text" placeholder="Invite code" />
       <button @click="joinGroup">Join</button>
+      <span v-if="!isInPublicGroup"> or <button @click="joinGroup('PUBLIC')">Join default Public Group</button></span>
     </section>
 
     <section class="group-list">
-      <h4>Your Groups</h4>
+      <h5>Your Groups</h5>
       <table v-if="groups.length">
         <thead>
           <tr>
             <th>Group Name</th>
             <th>Invite Code</th>
+            <th>Members</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="group in groups" :key="group._id">
+          <tr v-for="group in sortedGroups" :key="group._id">
             <td>{{ group.name }}</td>
             <td>
-              <span v-if="group.inviteCode !== 'PUBLIC'">
-                <code>{{ showingCodeFor === group._id ? group.inviteCode : '••••••••' }}</code>
-              </span>
+              <div v-if="group.inviteCode !== 'PUBLIC'" class="members-header">
+                <input type="text" :value="group.inviteCode" readonly class="invite-code-input" />
+                <button class="icon-btn" @click="copyUrl(group.inviteCode)" title="Copy invite URL">
+                  <i class="fas fa-copy"></i>
+                </button>
+              </div>
               <span v-else>—</span>
             </td>
+            <td v-if="group.inviteCode !== 'PUBLIC'">
+              <div class="members-header">
+                <span>{{ group.members.length }}</span>
+                <button class="icon-btn" @click="toggleMembers(group._id)" :title="showingMembersFor === group._id ? 'Hide members' : 'Show members'">
+                  <i :class="showingMembersFor === group._id ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                </button>
+              </div>
+              <div v-if="showingMembersFor === group._id" class="member-list">
+                <div v-for="member in group.members" :key="member">{{ member }}</div>
+              </div>
+            </td>
+            <td v-else>—</td>
             <td>
-              <button v-if="group.inviteCode !== 'PUBLIC'" class="show-code-btn" @click="toggleCode(group._id)">
-                {{ showingCodeFor === group._id ? 'Hide' : 'Show' }}
-              </button>
-              &nbsp;
-              <button v-if="group.inviteCode !== 'PUBLIC'" @click="leaveGroup(group._id)">Leave</button>
+              <button @click="leaveGroup(group._id)">Leave</button>
             </td>
           </tr>
         </tbody>
@@ -54,15 +69,28 @@
 
     data() {
       return {
-        groups:         [],
-        newGroupName:   '',
-        joinCode:       '',
-        showingCodeFor: null,
+        groups:            [],
+        newGroupName:      '',
+        joinCode:          '',
+        showingMembersFor: null,
       }
     },
 
-    mounted() {
-      this.fetchGroups()
+    computed: {
+      isInPublicGroup() {
+        return this.groups.some(g => g.inviteCode === 'PUBLIC')
+      },
+      sortedGroups() {
+        return [...this.groups].sort((a, b) => (a.inviteCode === 'PUBLIC' ? -1 : b.inviteCode === 'PUBLIC' ? 1 : 0))
+      },
+    },
+
+    async mounted() {
+      await this.fetchGroups()
+      const code = this.$route.query.join
+      if (code && !this.groups.some(g => g.inviteCode === code)) {
+        await this.joinGroup(code)
+      }
     },
 
     methods: {
@@ -96,21 +124,21 @@
         }
       },
 
-      async joinGroup() {
-        if (!this.joinCode) return
+      async joinGroup(code = this.joinCode) {
+        if (!code) return
         try {
           const response = await fetch('/Groups/Join', {
             method:      'POST',
             credentials: 'include',
             headers:     { 'Content-type': 'application/json; charset=UTF-8' },
-            body:        JSON.stringify({ inviteCode: this.joinCode }),
+            body:        JSON.stringify({ inviteCode: code }),
           })
           if (!response.ok) throw new Error(`Server error: ${response.status}`)
           const data = await response.json()
           if (!this.groups.some(g => g._id === data._id)) {
             this.groups = [...this.groups, data]
           }
-          this.joinCode = ''
+          if (code === this.joinCode) this.joinCode = ''
         } catch (error) {
           console.error(error)
           alert('joinGroup(): Unable to join group. Please contact Support')
@@ -135,8 +163,16 @@
         }
       },
 
-      toggleCode(groupId) {
-        this.showingCodeFor = this.showingCodeFor === groupId ? null : groupId
+      inviteUrl(inviteCode) {
+        return `${window.location.origin}/groups?join=${inviteCode}`
+      },
+
+      copyUrl(inviteCode) {
+        navigator.clipboard.writeText(this.inviteUrl(inviteCode))
+      },
+
+      toggleMembers(groupId) {
+        this.showingMembersFor = this.showingMembersFor === groupId ? null : groupId
       },
     },
   }
@@ -168,5 +204,42 @@
 
   th {
     font-weight: 600;
+  }
+
+  .members-header {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    color: inherit;
+    line-height: 1;
+    vertical-align: middle;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .invite-code-input {
+    width: 7rem;
+    font-family: monospace;
+    font-size: 0.875rem;
+    border: 1px solid #ddd;
+    background: #f5f5f5;
+    padding: 2px 4px;
+    margin: 0;
+    cursor: default;
+    vertical-align: middle;
+  }
+
+  .member-list {
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #555;
   }
 </style>

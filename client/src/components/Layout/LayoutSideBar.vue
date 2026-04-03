@@ -3,7 +3,7 @@
     <div class="sidebar">
       <router-link :to="{ name: 'my-wish-list'     }">My Wish List  </router-link>
       <router-link :to="{ name: 'groups'           }">My Groups     </router-link>
-      <router-link :to="{ name: 'group-wish-lists' }">View All Lists</router-link>
+      <router-link :to="{ name: 'group-wish-lists' }">View Wish Lists</router-link>
       <router-link :to="{ name: 'share-the-meal'   }">Feelin' Lucky?</router-link>
       <router-link :to="{ name: 'about'            }">About         </router-link>
     </div>

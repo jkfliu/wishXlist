@@ -1,10 +1,10 @@
 <template>
   <div id="GroupWishLists" class="small-container">
     <h3>Group Wish Lists</h3>
-    <i>View group Wish Lists and select items to gift!</i>
+    <i>View Group Wish Lists and select items to gift!</i>
 
     <div v-if="groups.length > 1" class="group-selector">
-      <label for="group-select">Viewing group: </label>
+      <label for="group-select">Viewing Group: </label>
       <select id="group-select" v-model="selectedGroupId" @change="loadWishListForGroup">
         <option v-for="g in groups" :key="g._id" :value="g._id">{{ g.name }}</option>
       </select>
@@ -59,7 +59,7 @@
           }
         } catch (error) {
           console.error(error)
-          alert('fetchGroups(): Unable to retrieve groups. Please contact Support')
+          alert('fetchGroups(): Unable to retrieve Groups. Please contact Support')
         }
       },
 

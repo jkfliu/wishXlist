@@ -1,7 +1,7 @@
 <template>
   <div id="MyWishList" class="small-container">
     <h3>Wish List</h3>
-    <i>Create your wish list and start sharing!</i>
+    <i>Create your Wish List and start sharing!</i>
     <wish-item-form @add:wish_item="addWishItem"/>
     <!-- Pass down the array to the child component -->
     <wish-list-table 
