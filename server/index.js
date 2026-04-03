@@ -11,6 +11,7 @@ const bodyParser = require('body-parser');
 
 // Initialise express server
 const app = express();
+app.set('case sensitive routing', true);
 app.use(express.static(path.join(__dirname, '../client/dist')));
 
 // Set up BodyParser
