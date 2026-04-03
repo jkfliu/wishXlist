@@ -18,6 +18,11 @@ describe('Login.vue', () => {
 
   beforeEach(() => {
     store = createStore('', false)
+    sessionStorage.clear()
+  })
+
+  afterEach(() => {
+    sessionStorage.clear()
   })
 
   test('renders Sign in with Google link', () => {
@@ -51,9 +56,21 @@ describe('Login.vue', () => {
     expect(wrapper.vm.$router.push).toHaveBeenCalledWith('/my-wish-list')
   })
 
-  test('?oauth_username with ?redirect uses the redirect path', () => {
-    const wrapper = createWrapper(store, { oauth_username: 'jkfliu%40gmail.com', redirect: '/profile' })
-    expect(wrapper.vm.$router.push).toHaveBeenCalledWith('/profile')
+  test('?redirect saves destination to sessionStorage for after OAuth', () => {
+    createWrapper(store, { redirect: '/groups?join=DDC25752' })
+    expect(sessionStorage.getItem('postLoginRedirect')).toBe('/groups?join=DDC25752')
+  })
+
+  test('?oauth_username redirects to sessionStorage destination and clears it', () => {
+    sessionStorage.setItem('postLoginRedirect', '/groups?join=DDC25752')
+    const wrapper = createWrapper(store, { oauth_username: 'jkfliu%40gmail.com' })
+    expect(wrapper.vm.$router.push).toHaveBeenCalledWith('/groups?join=DDC25752')
+    expect(sessionStorage.getItem('postLoginRedirect')).toBeNull()
+  })
+
+  test('?oauth_username falls back to /my-wish-list when no sessionStorage redirect', () => {
+    const wrapper = createWrapper(store, { oauth_username: 'jkfliu%40gmail.com' })
+    expect(wrapper.vm.$router.push).toHaveBeenCalledWith('/my-wish-list')
   })
 
   test('?error=oauth_failed shows error message', async () => {

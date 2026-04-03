@@ -29,11 +29,18 @@
         this.message = 'You have been logged out.';
       }
 
+      // Save redirect destination before the OAuth flow takes the user away
+      if (query.redirect) {
+        sessionStorage.setItem('postLoginRedirect', query.redirect);
+      }
+
       if (query.oauth_username) {
         const email = decodeURIComponent(query.oauth_username);
         this.$store.commit('set_vuex_globalUser', email);
         this.$store.commit('set_vuex_isAuthenticated', true);
-        this.$router.push(query.redirect || '/my-wish-list');
+        const redirect = sessionStorage.getItem('postLoginRedirect') || '/my-wish-list';
+        sessionStorage.removeItem('postLoginRedirect');
+        this.$router.push(redirect);
       }
 
       if (query.error === 'oauth_failed') {
