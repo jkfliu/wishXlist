@@ -1,7 +1,8 @@
 <template>
   <div id="wish-list-table">
-    <p v-if="wish_list_array.length === 0" class="empty-table">No items in your wish list</p> 
-    <table v-else>
+    <p v-if="wish_list_array.length === 0" class="empty-table">No items in this wish list</p> 
+    <div v-else class="contain-table">
+    <table>
       <thead>
         <tr>
           <th>User</th>
@@ -66,6 +67,7 @@
         </tr>
       </tbody>
     </table>
+    </div>
 
   </div>
 </template>

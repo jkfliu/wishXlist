@@ -10,7 +10,7 @@
     <div class="menu-right">
       <!-- If user is authenticated, display user welcome msg + link to profile + logout button -->
       <span v-if="this.$store.state.vuex_isAuthenticated">
-        Welcome back <router-link :to="{name: 'profile'}">{{ this.$store.state.vuex_globalUser }}</router-link>
+        <span class="welcome-text">Welcome back <router-link :to="{name: 'profile'}">{{ this.$store.state.vuex_globalUser }}</router-link></span>
         <a href="#" @click.prevent="confirmLogout" class="logout-link" title="Logout">
           <i class="fas fa-sign-out-alt fa-2x"></i> Logout
         </a>
@@ -69,5 +69,14 @@
     margin-right: 4px;
     vertical-align: middle;
     color: inherit;
+  }
+
+  @media (max-width: 600px) {
+    .topnav img {
+      height: 48px;
+    }
+    .welcome-text {
+      display: none;
+    }
   }
 </style>

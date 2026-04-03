@@ -35,7 +35,7 @@
               <div v-if="group.inviteCode !== 'PUBLIC'" class="members-header">
                 <input type="text" :value="group.inviteCode" readonly class="invite-code-input" />
                 <button class="icon-btn" @click="copyUrl(group.inviteCode)" title="Copy invite URL">
-                  <i class="fas fa-copy"></i>
+                  <i :class="copiedFor === group.inviteCode ? 'fas fa-check' : 'fas fa-copy'"></i>
                 </button>
               </div>
               <span v-else>—</span>
@@ -73,6 +73,8 @@
         newGroupName:      '',
         joinCode:          '',
         showingMembersFor: null,
+        copiedFor:         null,
+        copiedTimer:       null,
       }
     },
 
@@ -167,8 +169,15 @@
         return `${window.location.origin}/groups?join=${inviteCode}`
       },
 
-      copyUrl(inviteCode) {
-        navigator.clipboard.writeText(this.inviteUrl(inviteCode))
+      async copyUrl(inviteCode) {
+        try {
+          await navigator.clipboard.writeText(this.inviteUrl(inviteCode))
+          clearTimeout(this.copiedTimer)
+          this.copiedFor = inviteCode
+          this.copiedTimer = setTimeout(() => { this.copiedFor = null }, 1500)
+        } catch (err) {
+          console.error('Copy failed:', err)
+        }
       },
 
       toggleMembers(groupId) {

@@ -24,6 +24,9 @@ const store = new Vuex.Store({
       state.navVisible = !state.navVisible
       localStorage.setItem('navVisible', String(state.navVisible))
     },
+    set_nav_visible(state, bool) {
+      state.navVisible = bool
+    },
   },
 
   actions: {
