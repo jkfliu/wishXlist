@@ -12,7 +12,7 @@
 - [ ] Create option to share invite link with custom 'Welcome to wishXlist' text
 - [ ] Do Groups need Admin users who can remove users from Groups
 - [x] Shareable invite link for groups — when a group is created, generate a URL that non-members can open to join directly (e.g. /join?code=XXXX)
-- [x] Reconsider whether users should join the Public group by default on account creation
+- [x] Reconsider whether users should join the Public group by default on account creation — decided NOT to auto-join; users opt in manually. Note: server-side membership check on GET /WishList?groupId= means users who leave Public will see an empty group wish list (expected behaviour)
 
 ## Frontend
 - [x] Ability to hide/toggle the left-hand side navigation menu

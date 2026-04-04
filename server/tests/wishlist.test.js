@@ -92,10 +92,12 @@ describe('GET /WishList?groupId= — server-side group filtering', () => {
     await WishListModel.create({ user_name: 'otheruser@example.com', item_name: 'Other-group item',  visibleToGroups: ['000000000000000000000001'] });
     // Requester's own item (should be excluded)
     await WishListModel.create({ user_name: 'testuser@example.com',  item_name: 'Own item',          visibleToGroups: [] });
+    // Legacy item with no visibleToGroups field (pre-dates the field — should be visible to all groups)
+    await WishListModel.collection.insertOne({ user_name: 'otheruser@example.com', item_name: 'Legacy item' });
   });
 
   afterAll(async () => {
-    await WishListModel.deleteMany({ item_name: { $in: ['All-groups item', 'This-group item', 'Other-group item', 'Own item'] } });
+    await WishListModel.deleteMany({ item_name: { $in: ['All-groups item', 'This-group item', 'Other-group item', 'Own item', 'Legacy item'] } });
   });
 
   test('returns 400 when groupId is missing', async () => {
@@ -145,6 +147,14 @@ describe('GET /WishList?groupId= — server-side group filtering', () => {
     const res = await agent.get(`/WishList?groupId=${group._id}`);
     expect(res.status).toBe(200);
     expect(res.body.some(item => item.item_name === 'Other-group item')).toBe(false);
+  });
+
+  test('includes legacy items with no visibleToGroups field', async () => {
+    const agent = request.agent(app);
+    await agent.post('/Auth/Test/FakeLogin').send({ username: 'testuser@example.com' });
+    const res = await agent.get(`/WishList?groupId=${group._id}`);
+    expect(res.status).toBe(200);
+    expect(res.body.some(item => item.item_name === 'Legacy item')).toBe(true);
   });
 });
 

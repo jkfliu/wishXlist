@@ -192,7 +192,8 @@ app.get('/WishList', async (req, res) => {
       if (!group.members.includes(req.user.username)) return res.status(403).json({ error: 'Forbidden' });
       const data = await wishListModel.find({
         user_name: { $in: group.members, $ne: req.user.username },
-        $or: [{ visibleToGroups: { $size: 0 } }, { visibleToGroups: groupId }],
+        // Items with no field or empty array are visible to all groups (legacy + default)
+        $or: [{ visibleToGroups: { $exists: false } }, { visibleToGroups: { $size: 0 } }, { visibleToGroups: groupId }],
       });
       return res.json(data);
     }

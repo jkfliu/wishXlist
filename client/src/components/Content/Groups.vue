@@ -1,8 +1,8 @@
 <template>
   <div id="groups-page" class="small-container">
     <h3>My Groups</h3>
-    <p><i>Add yourself to a Group to share your Wish List</i>
-    <br><i>Adding to the default Public group means everyone in the Pubic group can see your wishes</i></p>
+    <p><i>Join a Group to see the Wish Lists of other members</i>
+    <br><i>The Public group is open to everyone — join it to share your Wish List with all other Public members</i></p>
 
     <div class="card">
       <section class="group-create">
