@@ -14,7 +14,7 @@
       <section class="group-join">
         <h5>Join a Group</h5>
         <input v-model="joinCode" type="text" placeholder="Invite code" />
-        <button @click="joinGroup">Join</button>
+        <button @click="joinGroup()">Join</button>
         <span v-if="!isInPublicGroup"> or <button @click="joinGroup('PUBLIC')">Join default Public Group</button></span>
       </section>
     </div>
@@ -213,6 +213,9 @@
   table {
     width: 100%;
     border-collapse: collapse;
+  }
+  table button {
+    margin-bottom: 0;
   }
 
   th, td {

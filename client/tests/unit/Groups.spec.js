@@ -219,6 +219,21 @@ describe('Groups.vue — joinGroup()', () => {
     expect(wrapper.vm.joinCode).toBe('')
   })
 
+  test('Join button click sends joinCode string, not an event object', async () => {
+    const joined = { _id: 'g4', name: 'Work', inviteCode: 'WORK1234', members: ['me@example.com'] }
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => [] })
+      .mockResolvedValueOnce({ ok: true, json: async () => joined })
+    const wrapper = createWrapper()
+    await new Promise(r => setTimeout(r, 0))
+    wrapper.vm.joinCode = 'WORK1234'
+    await wrapper.find('.group-join button').trigger('click')
+    await wrapper.vm.$nextTick()
+    const body = JSON.parse(global.fetch.mock.calls[1][1].body)
+    expect(typeof body.inviteCode).toBe('string')
+    expect(body.inviteCode).toBe('WORK1234')
+  })
+
   test('joinGroup with explicit code (e.g. PUBLIC) does not clear joinCode input', async () => {
     const publicGroup = { _id: 'g1', name: 'Public', inviteCode: 'PUBLIC', members: ['me@example.com'] }
     global.fetch = jest.fn()
