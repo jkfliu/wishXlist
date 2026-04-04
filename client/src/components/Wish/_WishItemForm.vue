@@ -148,17 +148,18 @@
   .form-table td {
     padding: 3px 8px 3px 0;
     vertical-align: middle;
+    border-bottom: none;
   }
   .form-table td:first-child {
     white-space: nowrap;
     width: 1%;
   }
   .form-table label {
-    display: block;
     margin: 0;
   }
   .form-table input {
     padding: 5px 4px;
+    vertical-align: middle;
   }
   [class*='-message'] {
     font-weight: 500;

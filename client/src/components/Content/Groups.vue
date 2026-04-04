@@ -4,20 +4,22 @@
     <p><i>Add yourself to a Group to share your Wish List</i>
     <br><i>Adding to the default Public group means everyone in the Pubic group can see your wishes</i></p>
 
-    <section class="group-create">
-      <h5>Create a New Group</h5>
-      <input v-model="newGroupName" type="text" placeholder="Group name" />
-      <button @click="createGroup">Create</button>
-    </section>
+    <div class="card">
+      <section class="group-create">
+        <h5>Create a New Group</h5>
+        <input v-model="newGroupName" type="text" placeholder="Group name" />
+        <button @click="createGroup">Create</button>
+      </section>
 
-    <section class="group-join">
-      <h5>Join a Group</h5>
-      <input v-model="joinCode" type="text" placeholder="Invite code" />
-      <button @click="joinGroup">Join</button>
-      <span v-if="!isInPublicGroup"> or <button @click="joinGroup('PUBLIC')">Join default Public Group</button></span>
-    </section>
+      <section class="group-join">
+        <h5>Join a Group</h5>
+        <input v-model="joinCode" type="text" placeholder="Invite code" />
+        <button @click="joinGroup">Join</button>
+        <span v-if="!isInPublicGroup"> or <button @click="joinGroup('PUBLIC')">Join default Public Group</button></span>
+      </section>
+    </div>
 
-    <section class="group-list">
+    <section class="group-list card">
       <h5>Your Groups</h5>
       <table v-if="groups.length">
         <thead>
@@ -200,7 +202,12 @@
   }
 
   section {
-    margin-bottom: 1.5rem;
+    margin-bottom: 0;
+  }
+  .group-create {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
   }
 
   table {
