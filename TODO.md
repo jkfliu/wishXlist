@@ -24,8 +24,8 @@
 
 ## Security
 - [x] Audit for exposed secrets — ensure no credentials, API keys, or passwords are committed to the repo (check .env is in .gitignore, scan git history)
-- [ ] Add req.isAuthenticated() guards to all /WishList/* endpoints (currently unprotected — critical)
-- [ ] Add ownership verification to /WishList/Update and /WishList/Delete (any user can modify any item)
+- [x] Add req.isAuthenticated() guards to all /WishList/* endpoints (currently unprotected — critical)
+- [x] Add ownership verification to /WishList/Update and /WishList/Delete (any user can modify any item)
 - [ ] Move visibleToGroups filtering to the server (currently client-side only — not a security boundary)
 - [ ] Fix GET /Groups/Members — verify requester is a member of the group before returning member list
 - [ ] OAuth callback leaks email in URL (?oauth_username=) — find a safer handoff mechanism
