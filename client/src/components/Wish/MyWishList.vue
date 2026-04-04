@@ -2,13 +2,15 @@
   <div id="MyWishList" class="small-container">
     <h3>Wish List</h3>
     <i>Create your Wish List and start sharing!</i>
-    <wish-item-form @add:wish_item="addWishItem"/>
+    <wish-item-form :groups="groups" @add:wish_item="addWishItem"/>
     <!-- Pass down the array to the child component -->
-    <wish-list-table 
-      v-bind:wish_list_array="wish_list_array"
-      v-bind:display_mode   ="display_mode"  
-      @delete:wish_item     ="deleteWishItem"
-      @edit:wish_item       ="editWishItem"/>
+    <i>Your current Wish List:</i> 
+    <wish-list-table
+      :wish_list_array="wish_list_array"
+      :display_mode="display_mode"
+      :groups="groups"
+      @delete:wish_item="deleteWishItem"
+      @edit:wish_item="editWishItem"/>
     <br>
   </div>
 </template>
@@ -26,20 +28,31 @@
     },
     
     data() {
-      // Defined as a function to return the data object when initiated
       return {
         wish_list_array: [],
         display_mode:    'self',
+        groups:          [],
       }
     },
 
-    mounted() {
-      this.getWishList(this.$store.state.vuex_globalUser)
+    async mounted() {
+      await Promise.all([
+        this.getWishList(this.$store.state.vuex_globalUser),
+        this.fetchGroups(),
+      ])
     },
 
     methods: {
+      async fetchGroups() {
+        try {
+          const response = await fetch('/Groups', { credentials: 'include' })
+          if (response.ok) this.groups = await response.json()
+        } catch (error) {
+          console.error(error)
+        }
+      },
+
       async getWishList(user) {
-        console.log('Executing MyWishList.vue getWishList() for ' + user)
         try {
           const response = await fetch('/WishList/' + user)
           const data     = await response.json()
@@ -52,7 +65,6 @@
 
       async addWishItem(wish_item) {
         wish_item.user_name = this.$store.state.vuex_globalUser
-        console.log('Executing MyWishList.vue addWishItem()')
         try {
           const response = await fetch('/WishList/Create', {
             method:    'POST',
@@ -69,7 +81,6 @@
       },
 
       async editWishItem(updated_wish_item) {
-        console.log('Executing MyWishList.vue editWishItem() for ' + updated_wish_item)
         try {
           const response = await fetch('/WishList/Update', {
             method:    'POST',
@@ -89,7 +100,6 @@
 
       async deleteWishItem(wish_item_id) {
         if (confirm('Are you sure you want to delete this?\n(This action cannot be undone)')) {
-          console.log('Executing App.vue deleteWishItem() for wish_item_id ' + wish_item_id)
           try {
             const response = await fetch(`/WishList/Delete/${wish_item_id}`, {
               method: 'POST'

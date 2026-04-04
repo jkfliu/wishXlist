@@ -50,6 +50,18 @@ describe('WishListItem schema', () => {
     expect(item.store).toBeUndefined();
   });
 
+  test('visibleToGroups defaults to empty array', async () => {
+    const item = await WishListItem.create({ user_name: 'u', item_name: 'i' });
+    expect(item.visibleToGroups).toEqual([]);
+  });
+
+  test('visibleToGroups can be saved with group IDs', async () => {
+    const item = await WishListItem.create({
+      user_name: 'u2', item_name: 'i2', visibleToGroups: ['g1', 'g2']
+    });
+    expect(item.visibleToGroups).toEqual(['g1', 'g2']);
+  });
+
   test('valid item can be saved', async () => {
     const item = new WishListItem({
       user_name: 'testuser',

@@ -32,6 +32,10 @@ const wishListItemSchema = new mongoose.Schema ({
   gifted_date: {
     type: Date
   },
+  visibleToGroups: {
+    type: [String],
+    default: []
+  },
 });
 
 // Export the schema (rather than the model), to allow multiple connections to the DB

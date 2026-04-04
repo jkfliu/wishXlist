@@ -1027,3 +1027,18 @@ caption {
 /**
  * Layout
  */
+
+.card {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.group-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 1rem 0 0;
+  font-weight: normal;
+}

@@ -47,6 +47,22 @@ describe('POST /WishList/Create', () => {
     expect(res.body).toHaveProperty('item_name', 'Test Item');
     createdItemId = res.body._id;
   });
+
+  test('persists visibleToGroups when provided', async () => {
+    const res = await request(app)
+      .post('/WishList/Create')
+      .send({ user_name: 'testuser', item_name: 'Group Item', visibleToGroups: ['g1', 'g2'] });
+    expect(res.status).toBe(200);
+    expect(res.body.visibleToGroups).toEqual(['g1', 'g2']);
+  });
+
+  test('visibleToGroups defaults to empty array when not provided', async () => {
+    const res = await request(app)
+      .post('/WishList/Create')
+      .send({ user_name: 'testuser', item_name: 'No Groups Item' });
+    expect(res.status).toBe(200);
+    expect(res.body.visibleToGroups).toEqual([]);
+  });
 });
 
 describe('GET /WishList/:user', () => {
@@ -78,6 +94,25 @@ describe('POST /WishList/Update', () => {
       });
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('item_name', 'Updated Item');
+  });
+
+  test('updates visibleToGroups', async () => {
+    expect(createdItemId).toBeDefined();
+    const res = await request(app)
+      .post('/WishList/Update')
+      .send({
+        _id: createdItemId,
+        item_name: 'Updated Item',
+        model: '',
+        price: '',
+        store: '',
+        item_modified_date: new Date().toISOString(),
+        gifter_user_name: '',
+        gifted_date: null,
+        visibleToGroups: ['g3'],
+      });
+    expect(res.status).toBe(200);
+    expect(res.body.visibleToGroups).toEqual(['g3']);
   });
 });
 

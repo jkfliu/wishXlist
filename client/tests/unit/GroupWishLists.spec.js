@@ -16,9 +16,9 @@ const sampleWishItems = [
 
 function makeFetch(groups, members, items) {
   return jest.fn()
-    .mockResolvedValueOnce({ ok: true, json: async () => groups })           // fetchGroups
-    .mockResolvedValueOnce({ ok: true, json: async () => ({ members }) })    // loadWishListForGroup - Members
-    .mockResolvedValueOnce({ ok: true, json: async () => items })            // loadWishListForGroup - WishList
+    .mockResolvedValueOnce({ ok: true, json: async () => groups })        // mounted - /Groups (parallel)
+    .mockResolvedValueOnce({ ok: true, json: async () => items })         // mounted - /WishList (parallel)
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ members }) }) // mounted - /Groups/Members
 }
 
 function createWrapper(store = createStore('me@example.com')) {
@@ -75,14 +75,15 @@ describe('GroupWishLists.vue — mounted() / data loading', () => {
     expect(wrapper.vm.selectedGroupId).toBe('g1')
   })
 
-  test('calls fetchGroups then loadWishListForGroup in sequence on mount', async () => {
+  test('fetches /Groups and /WishList in parallel, then /Groups/Members on mount', async () => {
     global.fetch = makeFetch(sampleGroups, sampleGroups[0].members, sampleWishItems)
     createWrapper()
     await new Promise(r => setTimeout(r, 0))
     expect(global.fetch).toHaveBeenCalledTimes(3)
-    expect(global.fetch.mock.calls[0][0]).toContain('/Groups')
-    expect(global.fetch.mock.calls[1][0]).toContain('/Groups/Members')
-    expect(global.fetch.mock.calls[2][0]).toContain('/WishList')
+    const urls = global.fetch.mock.calls.map(c => c[0])
+    expect(urls[0]).toContain('/Groups')
+    expect(urls[1]).toContain('/WishList')
+    expect(urls[2]).toContain('/Groups/Members')
   })
 })
 
@@ -124,8 +125,9 @@ describe('GroupWishLists.vue — loadWishListForGroup() filtering', () => {
 
   test('handles /Groups/Members non-ok response gracefully', async () => {
     global.fetch = jest.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => [sampleGroups[0]] })
-      .mockResolvedValueOnce({ ok: false, status: 500 })
+      .mockResolvedValueOnce({ ok: true, json: async () => [sampleGroups[0]] }) // /Groups
+      .mockResolvedValueOnce({ ok: true, json: async () => sampleWishItems })   // /WishList
+      .mockResolvedValueOnce({ ok: false, status: 500 })                         // /Groups/Members
     const wrapper = createWrapper()
     await new Promise(r => setTimeout(r, 0))
     expect(wrapper.vm.wish_list_array).toEqual([])
@@ -133,12 +135,47 @@ describe('GroupWishLists.vue — loadWishListForGroup() filtering', () => {
 
   test('handles /WishList non-ok response gracefully', async () => {
     global.fetch = jest.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => [sampleGroups[0]] })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ members: ['alice@example.com'] }) })
-      .mockResolvedValueOnce({ ok: false, status: 500 })
+      .mockResolvedValueOnce({ ok: true, json: async () => [sampleGroups[0]] }) // /Groups
+      .mockResolvedValueOnce({ ok: false, status: 500 })                         // /WishList
     const wrapper = createWrapper()
     await new Promise(r => setTimeout(r, 0))
     expect(wrapper.vm.wish_list_array).toEqual([])
+  })
+})
+
+
+describe('GroupWishLists.vue — visibleToGroups filtering', () => {
+  const itemVisibleToAll    = { _id: 'w1', user_name: 'alice@example.com', item_name: 'Visible to all',    visibleToGroups: [] }
+  const itemVisibleToG1     = { _id: 'w2', user_name: 'alice@example.com', item_name: 'Visible to g1',     visibleToGroups: ['g1'] }
+  const itemVisibleToG2     = { _id: 'w3', user_name: 'alice@example.com', item_name: 'Visible to g2',     visibleToGroups: ['g2'] }
+  const itemNoField         = { _id: 'w4', user_name: 'alice@example.com', item_name: 'No field (legacy)'  }
+
+  test('shows items with visibleToGroups: [] in the selected group', async () => {
+    global.fetch = makeFetch([sampleGroups[0]], ['alice@example.com'], [itemVisibleToAll])
+    const wrapper = createWrapper()
+    await new Promise(r => setTimeout(r, 0))
+    expect(wrapper.vm.wish_list_array.some(i => i._id === 'w1')).toBe(true)
+  })
+
+  test('shows items whose visibleToGroups includes the selected group', async () => {
+    global.fetch = makeFetch([sampleGroups[0]], ['alice@example.com'], [itemVisibleToG1])
+    const wrapper = createWrapper()
+    await new Promise(r => setTimeout(r, 0))
+    expect(wrapper.vm.wish_list_array.some(i => i._id === 'w2')).toBe(true)
+  })
+
+  test('hides items whose visibleToGroups does not include the selected group', async () => {
+    global.fetch = makeFetch([sampleGroups[0]], ['alice@example.com'], [itemVisibleToG2])
+    const wrapper = createWrapper()
+    await new Promise(r => setTimeout(r, 0))
+    expect(wrapper.vm.wish_list_array.some(i => i._id === 'w3')).toBe(false)
+  })
+
+  test('shows legacy items with no visibleToGroups field', async () => {
+    global.fetch = makeFetch([sampleGroups[0]], ['alice@example.com'], [itemNoField])
+    const wrapper = createWrapper()
+    await new Promise(r => setTimeout(r, 0))
+    expect(wrapper.vm.wish_list_array.some(i => i._id === 'w4')).toBe(true)
   })
 })
 
@@ -204,10 +241,10 @@ describe('GroupWishLists.vue — giftWishItem()', () => {
     // _WishList.vue sets gifter_user_name before emitting, so the item arrives pre-mutated
     const gifted = { ...sampleWishItems[0], gifter_user_name: 'me@example.com' }
     global.fetch = jest.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => [sampleGroups[0]] })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ members: ['alice@example.com'] }) })
-      .mockResolvedValueOnce({ ok: true, json: async () => [sampleWishItems[0]] })
-      .mockResolvedValueOnce({ ok: true, json: async () => gifted })
+      .mockResolvedValueOnce({ ok: true, json: async () => [sampleGroups[0]] })         // /Groups
+      .mockResolvedValueOnce({ ok: true, json: async () => [sampleWishItems[0]] })      // /WishList
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ members: ['alice@example.com'] }) }) // /Groups/Members
+      .mockResolvedValueOnce({ ok: true, json: async () => gifted })                    // /WishList/Update
 
     const wrapper = createWrapper()
     await new Promise(r => setTimeout(r, 0))
@@ -225,8 +262,8 @@ describe('GroupWishLists.vue — giftWishItem()', () => {
     window.confirm.mockReturnValue(false)
     global.fetch = jest.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => [sampleGroups[0]] })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ members: ['alice@example.com'] }) })
       .mockResolvedValueOnce({ ok: true, json: async () => [sampleWishItems[0]] })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ members: ['alice@example.com'] }) })
 
     const wrapper = createWrapper()
     await new Promise(r => setTimeout(r, 0))
@@ -239,8 +276,8 @@ describe('GroupWishLists.vue — giftWishItem()', () => {
   test('handles non-ok response without crash', async () => {
     global.fetch = jest.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => [sampleGroups[0]] })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ members: ['alice@example.com'] }) })
       .mockResolvedValueOnce({ ok: true, json: async () => [sampleWishItems[0]] })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ members: ['alice@example.com'] }) })
       .mockResolvedValueOnce({ ok: false, status: 500 })
 
     const wrapper = createWrapper()

@@ -72,7 +72,7 @@ app.use(passport.session());
 /************************/
 
 // Connect to the MongoDB database wishXlist
-mongoose.set('debug', true);
+mongoose.set('debug', process.env.NODE_ENV !== 'production');
 var db_connection = mongoose.createConnection(process.env.MONGO_URI || 'mongodb://localhost:27017/wishXlist');
 
 const wishListItemSchema = require('./schema/WishListItem_schema');
@@ -225,7 +225,8 @@ app.post('/WishList/Update', async (req, res) => {
       store:              req.body.store,
       item_modified_date: req.body.item_modified_date,
       gifter_user_name:   req.body.gifter_user_name,
-      gifted_date:        req.body.gifted_date
+      gifted_date:        req.body.gifted_date,
+      visibleToGroups:    req.body.visibleToGroups
     }, { new: true });
     return res.json(data);
   } catch (err) {

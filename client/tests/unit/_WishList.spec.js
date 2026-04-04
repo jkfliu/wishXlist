@@ -27,13 +27,19 @@ const sampleWishItems = [
   }
 ]
 
-function createWrapper(store, displayMode = 'self', items = sampleWishItems) {
+const sampleGroups = [
+  { _id: 'g1', name: 'Public' },
+  { _id: 'g2', name: 'Friends' },
+]
+
+function createWrapper(store, displayMode = 'self', items = sampleWishItems, groups = []) {
   return shallowMount(WishList, {
     localVue,
     store,
     propsData: {
       wish_list_array: items.map(item => ({ ...item })),
-      display_mode: displayMode
+      display_mode: displayMode,
+      groups,
     }
   })
 }
@@ -177,6 +183,75 @@ describe('_WishList.vue', () => {
     const result = wrapper.vm.toDate('2024-12-25T00:00:00.000Z')
     expect(typeof result).toBe('string')
     expect(result.length).toBeGreaterThan(0)
+  })
+})
+
+
+describe('_WishList.vue — group visibility in edit mode', () => {
+  let store
+
+  beforeEach(() => {
+    store = createStore('testuser')
+  })
+
+  test('renders group checkboxes in edit mode when groups prop provided', async () => {
+    const wrapper = createWrapper(store, 'self', sampleWishItems, sampleGroups)
+    await wrapper.findAll('tbody tr').at(0).find('.far.fa-edit').trigger('click')
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('.edit-group-visibility').exists()).toBe(true)
+    expect(wrapper.findAll('.edit-group-visibility input[type="checkbox"]').length).toBe(2)
+  })
+
+  test('does not render group checkboxes in edit mode when no groups prop', async () => {
+    const wrapper = createWrapper(store, 'self', sampleWishItems, [])
+    await wrapper.findAll('tbody tr').at(0).find('.far.fa-edit').trigger('click')
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('.edit-group-visibility').exists()).toBe(false)
+  })
+
+  test('pre-checks all groups when item has visibleToGroups: []', async () => {
+    const items = [{ ...sampleWishItems[0], visibleToGroups: [] }]
+    const wrapper = createWrapper(store, 'self', items, sampleGroups)
+    await wrapper.findAll('tbody tr').at(0).find('.far.fa-edit').trigger('click')
+    expect(wrapper.vm.editingGroupIds).toEqual(['g1', 'g2'])
+  })
+
+  test('pre-checks only specified groups when item has restricted visibility', async () => {
+    const items = [{ ...sampleWishItems[0], visibleToGroups: ['g1'] }]
+    const wrapper = createWrapper(store, 'self', items, sampleGroups)
+    await wrapper.findAll('tbody tr').at(0).find('.far.fa-edit').trigger('click')
+    expect(wrapper.vm.editingGroupIds).toEqual(['g1'])
+  })
+
+  test('emits visibleToGroups as [] when all groups selected on save', async () => {
+    const wrapper = createWrapper(store, 'self', sampleWishItems, sampleGroups)
+    await wrapper.findAll('tbody tr').at(0).find('.far.fa-edit').trigger('click')
+    await wrapper.vm.$nextTick()
+    wrapper.vm.editingGroupIds = ['g1', 'g2']
+    await wrapper.findAll('tbody tr').at(0).find('.far.fa-save').trigger('click')
+    const emitted = wrapper.emitted('edit:wish_item')[0][0]
+    expect(emitted.visibleToGroups).toEqual([])
+  })
+
+  test('emits specific group IDs when only some groups selected on save', async () => {
+    const wrapper = createWrapper(store, 'self', sampleWishItems, sampleGroups)
+    await wrapper.findAll('tbody tr').at(0).find('.far.fa-edit').trigger('click')
+    await wrapper.vm.$nextTick()
+    wrapper.vm.editingGroupIds = ['g1']
+    await wrapper.findAll('tbody tr').at(0).find('.far.fa-save').trigger('click')
+    const emitted = wrapper.emitted('edit:wish_item')[0][0]
+    expect(emitted.visibleToGroups).toEqual(['g1'])
+  })
+
+  test('last checked group checkbox is disabled in edit mode', async () => {
+    const wrapper = createWrapper(store, 'self', sampleWishItems, sampleGroups)
+    await wrapper.findAll('tbody tr').at(0).find('.far.fa-edit').trigger('click')
+    await wrapper.vm.$nextTick()
+    wrapper.vm.editingGroupIds = ['g1']
+    await wrapper.vm.$nextTick()
+    const checkboxes = wrapper.findAll('.edit-group-visibility input[type="checkbox"]')
+    const g1Box = checkboxes.wrappers.find(w => w.element.value === 'g1')
+    expect(g1Box.element.disabled).toBe(true)
   })
 })
 

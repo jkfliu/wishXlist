@@ -2,7 +2,7 @@
   <div id="groups-page" class="small-container">
     <h3>My Groups</h3>
     <p><i>Add yourself to a Group to share your Wish List</i>
-    <br><i>Adding to the Public group means everyone can see your wishes</i></p>
+    <br><i>Adding to the default Public group means everyone in the Pubic group can see your wishes</i></p>
 
     <section class="group-create">
       <h5>Create a New Group</h5>
@@ -34,9 +34,12 @@
             <td>
               <div v-if="group.inviteCode !== 'PUBLIC'" class="members-header">
                 <input type="text" :value="group.inviteCode" readonly class="invite-code-input" />
-                <button class="icon-btn" @click="copyUrl(group.inviteCode)" title="Copy invite URL">
-                  <i :class="copiedFor === group.inviteCode ? 'fas fa-check' : 'fas fa-copy'"></i>
-                </button>
+                <span class="copy-wrapper">
+                  <button class="icon-btn" @click="copyUrl(group.inviteCode)" title="Copy invite URL">
+                    <i :class="copiedFor === group.inviteCode ? 'fas fa-check' : 'fas fa-copy'"></i>
+                  </button>
+                  <span v-if="copiedFor === group.inviteCode" class="copied-tooltip">Copied!</span>
+                </span>
               </div>
               <span v-else>—</span>
             </td>
@@ -250,5 +253,25 @@
     margin-top: 0.25rem;
     font-size: 0.875rem;
     color: #555;
+  }
+
+  .copy-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .copied-tooltip {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 4px);
+    transform: translateX(-50%);
+    background: #333;
+    color: #fff;
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+    pointer-events: none;
   }
 </style>

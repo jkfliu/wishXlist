@@ -1,5 +1,5 @@
 <template>
-  <div id="wish-list-table">
+  <div id="wish-list-table" class="card">
     <p v-if="wish_list_array.length === 0" class="empty-table">No items in this wish list</p> 
     <div v-else class="contain-table">
     <table>
@@ -19,10 +19,6 @@
 
       <tbody>
         <tr v-for="wish_item in sortedList" :key="wish_item._id">
-          <!-- If you wish to display the MongoDB _id -->
-          <!-- <td> {{ wish_item._id }} </td> -->
-
-          <!-- User name is not editable! -->
           <td> {{ wish_item.user_name }} </td>
 
           <td v-if="editing === wish_item._id"><input type="text" v-model="wish_item.item_name" /></td>
@@ -46,6 +42,17 @@
           <td> {{ toDate(wish_item.gifted_date) }} </td>
 
           <td v-if="editing === wish_item._id">
+            <div v-if="groups.length" class="edit-group-visibility">
+              <label v-for="g in groups" :key="g._id" class="group-checkbox-label">
+                <input
+                  type="checkbox"
+                  :value="g._id"
+                  v-model="editingGroupIds"
+                  :disabled="editingGroupIds.length === 1 && editingGroupIds.includes(g._id)"
+                />
+                {{ g.name }}
+              </label>
+            </div>
             <i @click="editWishItem(wish_item)" class="far fa-save" title="Save"></i>
             &nbsp; &nbsp; &nbsp;
             <i @click="cancelEdit(wish_item)" class="fas fa-undo" title="Cancel"></i>
@@ -59,7 +66,6 @@
             <i @click="$emit('delete:wish_item', wish_item._id)" class="far fa-trash-alt" title="Delete"></i>
           </td>
 
-          <!-- ungifted items in group view can be gifted -->
           <td v-else-if="display_mode === 'group' && !wish_item.gifter_user_name">
             <i @click="giftWishItem(wish_item)" class="fa fa-gift" title="Gift"></i>
           </td>
@@ -76,17 +82,18 @@
   export default {
     name: 'wish-list-table',
 
-    // These are taken as inputs
     props: {
       wish_list_array: Array,
       display_mode:    String,
+      groups:          { type: Array, default: () => [] },
     },
 
     data() {
       return {
-        editing: null,
-        sortKey: null,
-        sortAsc: true,
+        editing:         null,
+        editingGroupIds: [],
+        sortKey:         null,
+        sortAsc:         true,
       }
     },
 
@@ -119,6 +126,9 @@
       editMode(wish_item) {
         this.cachedWishItem = Object.assign({}, wish_item)
         this.editing = wish_item._id
+        this.editingGroupIds = wish_item.visibleToGroups?.length
+          ? [...wish_item.visibleToGroups]
+          : this.groups.map(g => g._id)
       },
 
       cancelEdit(wish_item) {
@@ -126,10 +136,12 @@
         this.editing = null
       },
 
-      // Local method which does the actual $emit call
       editWishItem(wish_item) {
         if (wish_item.item_name === '') return
         wish_item.item_modified_date = new Date().toUTCString()
+        wish_item.visibleToGroups = this.editingGroupIds.length === this.groups.length
+          ? []
+          : [...this.editingGroupIds]
         this.$emit('edit:wish_item', wish_item)
         this.editing = null
       },
@@ -176,5 +188,8 @@
 <style scoped>
   th {
     white-space: nowrap;
+  }
+  .edit-group-visibility {
+    margin-bottom: 0.4rem;
   }
 </style>

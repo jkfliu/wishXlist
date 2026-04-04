@@ -1,14 +1,13 @@
 <template>
   <div class="small-container">
     <h3>About wishXlist</h3>
-    <br>You're currently viewing wishXlist <i>beta</i> version (not for general release).
-    <br>Best experienced on Google Chrome browsers.
+    <br>You're currently viewing wishXlist <i>beta</i> version.
     <br>
-    <br>Feedback/suggestions to <a href="mailto:jkfliu@gmail.com?subject=wishXlist Feedback">Jason Liu</a>.
+    <br>Please send feedback/suggestions to <a href="mailto:jkfliu@gmail.com?subject=wishXlist Feedback">Jason Liu</a>.
     <br>
     <br>Further work to be done:
       <ul>
-        <li>Optimise for mobile viewing</li>
+        <li>(In progress) Allowing wish list items to be group-specific</li>
       </ul>
    
   </div>

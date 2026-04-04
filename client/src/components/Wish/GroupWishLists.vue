@@ -42,27 +42,38 @@
     },
 
     async mounted() {
-      await this.fetchGroups()
-      if (this.selectedGroupId) {
-        await this.loadWishListForGroup()
+      try {
+        // Fetch groups and wish list in parallel — no dependency between them on initial load
+        const [groupsRes, wishRes] = await Promise.all([
+          fetch('/Groups', { credentials: 'include' }),
+          fetch('/WishList', { credentials: 'include' }),
+        ])
+        if (!groupsRes.ok) throw new Error(`Server error: ${groupsRes.status}`)
+        if (!wishRes.ok)   throw new Error(`Server error: ${wishRes.status}`)
+        const [groups, allItems] = await Promise.all([groupsRes.json(), wishRes.json()])
+
+        this.groups = groups
+        if (!groups.length) return
+        this.selectedGroupId = groups[0]._id
+
+        // Only members fetch remains after groups are known
+        const mRes = await fetch(`/Groups/Members?groupId=${this.selectedGroupId}`, { credentials: 'include' })
+        if (!mRes.ok) throw new Error(`Server error: ${mRes.status}`)
+        const { members } = await mRes.json()
+
+        const user = this.$store.state.vuex_globalUser
+        this.wish_list_array = allItems.filter(item =>
+          members.includes(item.user_name) &&
+          item.user_name !== user &&
+          (!item.visibleToGroups?.length || item.visibleToGroups.includes(this.selectedGroupId))
+        )
+      } catch (error) {
+        console.error(error)
+        alert('Unable to load Group Wish Lists. Please contact Support')
       }
     },
 
     methods: {
-      async fetchGroups() {
-        try {
-          const response = await fetch('/Groups', { credentials: 'include' })
-          if (!response.ok) throw new Error(`Server error: ${response.status}`)
-          this.groups = await response.json()
-          if (this.groups.length > 0) {
-            this.selectedGroupId = this.groups[0]._id
-          }
-        } catch (error) {
-          console.error(error)
-          alert('fetchGroups(): Unable to retrieve Groups. Please contact Support')
-        }
-      },
-
       async loadWishListForGroup() {
         if (!this.selectedGroupId) return
         try {
@@ -76,7 +87,9 @@
 
           const user = this.$store.state.vuex_globalUser
           this.wish_list_array = data.filter(item =>
-            members.includes(item.user_name) && item.user_name !== user
+            members.includes(item.user_name) &&
+            item.user_name !== user &&
+            (!item.visibleToGroups?.length || item.visibleToGroups.includes(this.selectedGroupId))
           )
         } catch (error) {
           console.error(error)
@@ -86,7 +99,6 @@
 
       async giftWishItem(updated_wish_item) {
         if (confirm('Are you sure you want to gift this item?\n(This action cannot be undone)')) {
-          console.log('Executing GroupWishLists.vue giftWishItem() for ' + updated_wish_item)
           try {
             const response = await fetch('/WishList/Update', {
               method:    'POST',
@@ -105,9 +117,9 @@
         }
       },
 
-    } // End of methods()
+    }
 
-  } // End of export
+  }
 </script>
 
 <style scoped>
