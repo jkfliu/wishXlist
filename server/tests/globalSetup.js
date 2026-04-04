@@ -2,6 +2,7 @@ const { MongoMemoryServer } = require('mongodb-memory-server');
 
 module.exports = async () => {
   const mongod = await MongoMemoryServer.create();
+  process.env.NODE_ENV               = 'test';
   process.env.MONGO_URI              = mongod.getUri() + 'wishXlist';
   process.env.SESSION_SECRET         = 'test-secret';
   process.env.CORS_ORIGINS           = 'http://localhost:8080';

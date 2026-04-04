@@ -179,8 +179,8 @@ passport.deserializeUser(async (id, done) => {
 /*********************/
 
 // Route for retrieving Wish List items (all)
-app.get('/WishList', async (_req, res) => {
-  console.log('index.js - Retrieving Wish List items (all)')
+app.get('/WishList', async (req, res) => {
+  if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
   try {
     const data = await wishListModel.find({});
     return res.json(data);
@@ -192,7 +192,7 @@ app.get('/WishList', async (_req, res) => {
 
 // Route for retrieving Wish List items (single user)
 app.get('/WishList/:user', async (req, res) => {
-  console.log('index.js - Retrieving Wish List items (single user)' + req.params.user)
+  if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
   try {
     const data = await wishListModel.find({ user_name: req.params.user });
     return res.json(data);
@@ -204,7 +204,7 @@ app.get('/WishList/:user', async (req, res) => {
 
 // Route for creating a new Wish List item
 app.post('/WishList/Create', async (req, res) => {
-  console.log('index.js - Creating new Wish List item: ' + req.body)
+  if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
   try {
     const data = await wishListModel.create(req.body);
     return res.json(data);
@@ -216,8 +216,14 @@ app.post('/WishList/Create', async (req, res) => {
 
 // Route for updating a Wish List item
 app.post('/WishList/Update', async (req, res) => {
-  console.log('index.js - Updating Wish List item: ' + req.body)
+  if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
   try {
+    const item = await wishListModel.findById(req.body._id);
+    if (!item) return res.status(404).json({ error: 'Item not found' });
+    // Allow owner to edit, or gifter to update gifter fields only
+    const isOwner  = item.user_name === req.user.username;
+    const isGifter = !item.gifter_user_name && req.body.gifter_user_name === req.user.username;
+    if (!isOwner && !isGifter) return res.status(403).json({ error: 'Forbidden' });
     const data = await wishListModel.findByIdAndUpdate(req.body._id, {
       item_name:          req.body.item_name,
       model:              req.body.model,
@@ -237,8 +243,11 @@ app.post('/WishList/Update', async (req, res) => {
 
 // Route for deleting an existing Wish List item
 app.post('/WishList/Delete/:_id', async (req, res) => {
-  console.log('index.js - Deleting Wish List item: ' + req.params._id)
+  if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
   try {
+    const item = await wishListModel.findById(req.params._id);
+    if (!item) return res.status(404).json({ error: 'Item not found' });
+    if (item.user_name !== req.user.username) return res.status(403).json({ error: 'Forbidden' });
     const data = await wishListModel.findByIdAndDelete(req.params._id);
     return res.json(data);
   } catch (err) {
