@@ -226,4 +226,14 @@ describe('GET /Groups/Members', () => {
     const res = await agent.get('/Groups/Members?groupId=000000000000000000000000');
     expect(res.status).toBe(404);
   });
+
+  test('returns 403 when requester is not a member of the group', async () => {
+    const privateGroup = await GroupModel.create({
+      name: 'Private', inviteCode: 'PRIVGRP', members: ['other@example.com'],
+    });
+    const agent = request.agent(app);
+    await agent.post('/Auth/Test/FakeLogin').send({ username: 'grouptest@example.com' });
+    const res = await agent.get(`/Groups/Members?groupId=${privateGroup._id}`);
+    expect(res.status).toBe(403);
+  });
 });

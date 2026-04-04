@@ -26,8 +26,8 @@
 - [x] Audit for exposed secrets — ensure no credentials, API keys, or passwords are committed to the repo (check .env is in .gitignore, scan git history)
 - [x] Add req.isAuthenticated() guards to all /WishList/* endpoints (currently unprotected — critical)
 - [x] Add ownership verification to /WishList/Update and /WishList/Delete (any user can modify any item)
-- [ ] Move visibleToGroups filtering to the server (currently client-side only — not a security boundary)
-- [ ] Fix GET /Groups/Members — verify requester is a member of the group before returning member list
+- [x] Move visibleToGroups filtering to the server (currently client-side only — not a security boundary)
+- [x] Fix GET /Groups/Members — verify requester is a member of the group before returning member list
 - [ ] OAuth callback leaks email in URL (?oauth_username=) — find a safer handoff mechanism
 - [ ] Add CSRF protection to POST endpoints
 
@@ -37,9 +37,9 @@
 - [ ] Fix price field from String to Number in WishListItem schema
 - [ ] Handle stale visibleToGroups group IDs when a group is deleted (cascade or cleanup)
 - [ ] Add database indexes on user_name, visibleToGroups, group membership fields
-- [ ] Add pagination to GET /WishList (full collection scan — will degrade at scale)
+- [ ] (Scalability) Add pagination to GET /WishList (full collection scan — will degrade at scale)
 
 ## Frontend
 - [ ] Re-validate server session on route change (router currently trusts localStorage auth state)
-- [ ] Deduplicate GET /WishList fetches across MyWishList and GroupWishLists
+- [ ] (Scalability) Deduplicate GET /WishList fetches across MyWishList and GroupWishLists (by cacheing it in Vuex)
 

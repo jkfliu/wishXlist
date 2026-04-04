@@ -64,13 +64,14 @@ describe('MyWishList.vue — groups prop passed to children', () => {
     expect(wrapper.html()).toContain('groups=')
   })
 
-  test('passes groups to wish-list-table', async () => {
+  test('passes groups to both wish-item-form and wish-list-table via template', async () => {
     global.fetch = jest.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => [] })
       .mockResolvedValueOnce({ ok: true, json: async () => sampleGroups })
     const wrapper = createWrapper()
     await new Promise(r => setTimeout(r, 0))
-    // Both form and table should receive the same groups array via vm.groups
-    expect(wrapper.vm.groups).toEqual(sampleGroups)
+    // shallowMount renders stub attributes — verify :groups binding appears twice (form + table)
+    const matches = wrapper.html().match(/groups=/g)
+    expect(matches).toHaveLength(2)
   })
 })

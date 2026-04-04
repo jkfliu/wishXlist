@@ -25,7 +25,7 @@ const corsOrigins = process.env.CORS_ORIGINS
 app.use(cors({ origin: corsOrigins, credentials: true }));
 
 // Routes
-// GET  /WishList/                        - Select all
+// GET  /WishList/                        - Select all (or filtered by ?groupId=)
 // GET  /WishList/:user                   - Select wishlist for specific user
 // POST /WishList/Create                  - Create new wishlist item
 // POST /WishList/Update                  - Update wishlist item
@@ -40,7 +40,7 @@ app.use(cors({ origin: corsOrigins, credentials: true }));
 // POST /Groups/Create                    - Create a new group
 // POST /Groups/Join                      - Join a group by invite code
 // POST /Groups/Leave                     - Leave a group
-// GET  /Groups/Members                   - Return members of a group
+// GET  /Groups/Members                   - Return members of a group (requester must be a member)
 app.options('/WishList/:user',       cors());
 app.options('/WishList/Delete/:_id', cors());
 app.options('/Groups/Create',        cors());
@@ -178,10 +178,24 @@ passport.deserializeUser(async (id, done) => {
 /* ROUTES - DATABASE */
 /*********************/
 
-// Route for retrieving Wish List items (all)
+// Route for retrieving Wish List items (all, or filtered by group)
+// ?groupId=<id> — returns items visible to that group, excluding the requester's own items
+// (no groupId)  — returns all items (used by MyWishList for the current user's own list)
 app.get('/WishList', async (req, res) => {
   if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
   try {
+    const { groupId } = req.query;
+    if (groupId !== undefined) {
+      if (!groupId) return res.status(400).json({ error: 'groupId is required' });
+      const group = await groupModel.findById(groupId);
+      if (!group) return res.status(404).json({ error: 'Group not found' });
+      if (!group.members.includes(req.user.username)) return res.status(403).json({ error: 'Forbidden' });
+      const data = await wishListModel.find({
+        user_name: { $in: group.members, $ne: req.user.username },
+        $or: [{ visibleToGroups: { $size: 0 } }, { visibleToGroups: groupId }],
+      });
+      return res.json(data);
+    }
     const data = await wishListModel.find({});
     return res.json(data);
   } catch (err) {
@@ -215,12 +229,12 @@ app.post('/WishList/Create', async (req, res) => {
 });
 
 // Route for updating a Wish List item
+// Owner may edit all fields; non-owner may only claim gifter_user_name on an ungifted item
 app.post('/WishList/Update', async (req, res) => {
   if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
   try {
     const item = await wishListModel.findById(req.body._id);
     if (!item) return res.status(404).json({ error: 'Item not found' });
-    // Allow owner to edit, or gifter to update gifter fields only
     const isOwner  = item.user_name === req.user.username;
     const isGifter = !item.gifter_user_name && req.body.gifter_user_name === req.user.username;
     if (!isOwner && !isGifter) return res.status(403).json({ error: 'Forbidden' });
@@ -232,7 +246,7 @@ app.post('/WishList/Update', async (req, res) => {
       item_modified_date: req.body.item_modified_date,
       gifter_user_name:   req.body.gifter_user_name,
       gifted_date:        req.body.gifted_date,
-      visibleToGroups:    req.body.visibleToGroups
+      visibleToGroups:    req.body.visibleToGroups,
     }, { new: true });
     return res.json(data);
   } catch (err) {
@@ -324,12 +338,13 @@ app.post('/Groups/Leave', async (req, res) => {
   }
 });
 
-// Return members of a group
+// Return members of a group (requester must be a member)
 app.get('/Groups/Members', async (req, res) => {
   if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
   try {
     const data = await groupModel.findById(req.query.groupId);
     if (!data) return res.status(404).json({ error: 'Group not found' });
+    if (!data.members.includes(req.user.username)) return res.status(403).json({ error: 'Forbidden' });
     return res.json({ members: data.members });
   } catch (err) {
     console.error(err);

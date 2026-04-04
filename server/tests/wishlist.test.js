@@ -6,15 +6,18 @@ let app;
 let wishConn;
 let WishListModel;
 let UserModel;
+let GroupModel;
 let createdItemId;
 
 beforeAll(async () => {
   const wishListItemSchema = require('../schema/wishListItem_schema');
   const userSchema         = require('../schema/User_schema');
+  const groupSchema        = require('../schema/Group_schema');
 
   wishConn  = await mongoose.createConnection(process.env.MONGO_URI);
-  WishListModel = wishConn.model('WishList', wishListItemSchema, 'WishList');
-  UserModel     = wishConn.model('UserList', userSchema, 'UserList');
+  WishListModel = wishConn.model('WishList',  wishListItemSchema, 'WishList');
+  UserModel     = wishConn.model('UserList',  userSchema,         'UserList');
+  GroupModel    = wishConn.model('Groups',    groupSchema,        'Groups');
 
   await UserModel.create({ googleId: 'wl-google-1', username: 'testuser@example.com',  displayName: 'Test User' });
   await UserModel.create({ googleId: 'wl-google-2', username: 'otheruser@example.com', displayName: 'Other User' });
@@ -26,6 +29,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await WishListModel.deleteMany({});
   await UserModel.deleteMany({ username: { $in: ['testuser@example.com', 'otheruser@example.com'] } });
+  await GroupModel.deleteMany({ inviteCode: { $in: ['WLGRP1', 'WLGRP2'] } });
   await closeAllConnections();
 });
 
@@ -68,6 +72,79 @@ describe('GET /WishList', () => {
     const res = await agent.get('/WishList');
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
+  });
+});
+
+describe('GET /WishList?groupId= — server-side group filtering', () => {
+  let group;
+
+  beforeAll(async () => {
+    // testuser is the viewer; otheruser is the wish list owner
+    group = await GroupModel.create({
+      name: 'WL Test Group', inviteCode: 'WLGRP1',
+      members: ['testuser@example.com', 'otheruser@example.com'],
+    });
+    // Item visible to all groups (visibleToGroups: [])
+    await WishListModel.create({ user_name: 'otheruser@example.com', item_name: 'All-groups item',    visibleToGroups: [] });
+    // Item visible only to this group
+    await WishListModel.create({ user_name: 'otheruser@example.com', item_name: 'This-group item',   visibleToGroups: [group._id.toString()] });
+    // Item visible only to a different group (should be hidden)
+    await WishListModel.create({ user_name: 'otheruser@example.com', item_name: 'Other-group item',  visibleToGroups: ['000000000000000000000001'] });
+    // Requester's own item (should be excluded)
+    await WishListModel.create({ user_name: 'testuser@example.com',  item_name: 'Own item',          visibleToGroups: [] });
+  });
+
+  afterAll(async () => {
+    await WishListModel.deleteMany({ item_name: { $in: ['All-groups item', 'This-group item', 'Other-group item', 'Own item'] } });
+  });
+
+  test('returns 400 when groupId is missing', async () => {
+    const agent = request.agent(app);
+    await agent.post('/Auth/Test/FakeLogin').send({ username: 'testuser@example.com' });
+    const res = await agent.get('/WishList?groupId=');
+    expect(res.status).toBe(400);
+  });
+
+  test('returns 403 when requester is not a member of the group', async () => {
+    const outsiderGroup = await GroupModel.create({
+      name: 'Private Group', inviteCode: 'WLGRP2', members: ['otheruser@example.com'],
+    });
+    const agent = request.agent(app);
+    await agent.post('/Auth/Test/FakeLogin').send({ username: 'testuser@example.com' });
+    const res = await agent.get(`/WishList?groupId=${outsiderGroup._id}`);
+    expect(res.status).toBe(403);
+  });
+
+  test('excludes the requester\'s own items', async () => {
+    const agent = request.agent(app);
+    await agent.post('/Auth/Test/FakeLogin').send({ username: 'testuser@example.com' });
+    const res = await agent.get(`/WishList?groupId=${group._id}`);
+    expect(res.status).toBe(200);
+    expect(res.body.every(item => item.user_name !== 'testuser@example.com')).toBe(true);
+  });
+
+  test('includes items with visibleToGroups [] (visible to all)', async () => {
+    const agent = request.agent(app);
+    await agent.post('/Auth/Test/FakeLogin').send({ username: 'testuser@example.com' });
+    const res = await agent.get(`/WishList?groupId=${group._id}`);
+    expect(res.status).toBe(200);
+    expect(res.body.some(item => item.item_name === 'All-groups item')).toBe(true);
+  });
+
+  test('includes items explicitly visible to this group', async () => {
+    const agent = request.agent(app);
+    await agent.post('/Auth/Test/FakeLogin').send({ username: 'testuser@example.com' });
+    const res = await agent.get(`/WishList?groupId=${group._id}`);
+    expect(res.status).toBe(200);
+    expect(res.body.some(item => item.item_name === 'This-group item')).toBe(true);
+  });
+
+  test('excludes items restricted to a different group', async () => {
+    const agent = request.agent(app);
+    await agent.post('/Auth/Test/FakeLogin').send({ username: 'testuser@example.com' });
+    const res = await agent.get(`/WishList?groupId=${group._id}`);
+    expect(res.status).toBe(200);
+    expect(res.body.some(item => item.item_name === 'Other-group item')).toBe(false);
   });
 });
 

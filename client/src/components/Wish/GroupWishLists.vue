@@ -43,30 +43,12 @@
 
     async mounted() {
       try {
-        // Fetch groups and wish list in parallel — no dependency between them on initial load
-        const [groupsRes, wishRes] = await Promise.all([
-          fetch('/Groups', { credentials: 'include' }),
-          fetch('/WishList', { credentials: 'include' }),
-        ])
+        const groupsRes = await fetch('/Groups', { credentials: 'include' })
         if (!groupsRes.ok) throw new Error(`Server error: ${groupsRes.status}`)
-        if (!wishRes.ok)   throw new Error(`Server error: ${wishRes.status}`)
-        const [groups, allItems] = await Promise.all([groupsRes.json(), wishRes.json()])
-
-        this.groups = groups
-        if (!groups.length) return
-        this.selectedGroupId = groups[0]._id
-
-        // Only members fetch remains after groups are known
-        const mRes = await fetch(`/Groups/Members?groupId=${this.selectedGroupId}`, { credentials: 'include' })
-        if (!mRes.ok) throw new Error(`Server error: ${mRes.status}`)
-        const { members } = await mRes.json()
-
-        const user = this.$store.state.vuex_globalUser
-        this.wish_list_array = allItems.filter(item =>
-          members.includes(item.user_name) &&
-          item.user_name !== user &&
-          (!item.visibleToGroups?.length || item.visibleToGroups.includes(this.selectedGroupId))
-        )
+        this.groups = await groupsRes.json()
+        if (!this.groups.length) return
+        this.selectedGroupId = this.groups[0]._id
+        await this.loadWishListForGroup()
       } catch (error) {
         console.error(error)
         alert('Unable to load Group Wish Lists. Please contact Support')
@@ -77,20 +59,9 @@
       async loadWishListForGroup() {
         if (!this.selectedGroupId) return
         try {
-          const [mRes, wRes] = await Promise.all([
-            fetch(`/Groups/Members?groupId=${this.selectedGroupId}`, { credentials: 'include' }),
-            fetch('/WishList', { credentials: 'include' }),
-          ])
-          if (!mRes.ok) throw new Error(`Server error: ${mRes.status}`)
-          if (!wRes.ok) throw new Error(`Server error: ${wRes.status}`)
-          const [{ members }, data] = await Promise.all([mRes.json(), wRes.json()])
-
-          const user = this.$store.state.vuex_globalUser
-          this.wish_list_array = data.filter(item =>
-            members.includes(item.user_name) &&
-            item.user_name !== user &&
-            (!item.visibleToGroups?.length || item.visibleToGroups.includes(this.selectedGroupId))
-          )
+          const res = await fetch(`/WishList?groupId=${this.selectedGroupId}`, { credentials: 'include' })
+          if (!res.ok) throw new Error(`Server error: ${res.status}`)
+          this.wish_list_array = await res.json()
         } catch (error) {
           console.error(error)
           alert('loadWishListForGroup(): Unable to retrieve Wish List items. Please contact Support')

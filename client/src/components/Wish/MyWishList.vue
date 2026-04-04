@@ -54,7 +54,7 @@
 
       async getWishList(user) {
         try {
-          const response = await fetch('/WishList/' + user)
+          const response = await fetch('/WishList/' + user, { credentials: 'include' })
           const data     = await response.json()
           this.wish_list_array = data
         } catch (error) {
