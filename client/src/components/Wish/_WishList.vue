@@ -27,7 +27,7 @@
           <td v-if="editing === wish_item._id"><input type="text" v-model="wish_item.model" /></td>
           <td v-else>{{ wish_item.model }}</td>
 
-          <td v-if="editing === wish_item._id"><input type="text" v-model="wish_item.price" /></td>
+          <td v-if="editing === wish_item._id"><input type="number" min="0" step="0.01" v-model.number="wish_item.price" /></td>
           <td v-else>{{ wish_item.price }}</td>
 
           <td v-if="editing === wish_item._id"><input type="text" v-model="wish_item.store" /></td>

@@ -34,7 +34,7 @@
 ## API & Data Model
 - [ ] Change POST /WishList/Delete to DELETE method
 - [ ] Standardise route naming — remove verb-based paths (/WishList/Create → POST /WishList)
-- [ ] Fix price field from String to Number in WishListItem schema
+- [x] Fix price field from String to Number in WishListItem schema
 - [ ] Handle stale visibleToGroups group IDs when a group is deleted (cascade or cleanup)
 - [ ] Add database indexes on user_name, visibleToGroups, group membership fields
 - [ ] (Scalability) Add pagination to GET /WishList (full collection scan — will degrade at scale)

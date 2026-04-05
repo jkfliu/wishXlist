@@ -50,6 +50,18 @@ describe('WishListItem schema', () => {
     expect(item.store).toBeUndefined();
   });
 
+  test('price is stored as a Number', async () => {
+    const item = await WishListItem.create({ user_name: 'u', item_name: 'i', price: 29.99 });
+    expect(typeof item.price).toBe('number');
+    expect(item.price).toBe(29.99);
+  });
+
+  test('price coerces numeric strings to Number', async () => {
+    const item = await WishListItem.create({ user_name: 'u', item_name: 'i', price: '14.50' });
+    expect(typeof item.price).toBe('number');
+    expect(item.price).toBe(14.50);
+  });
+
   test('visibleToGroups defaults to empty array', async () => {
     const item = await WishListItem.create({ user_name: 'u', item_name: 'i' });
     expect(item.visibleToGroups).toEqual([]);
@@ -67,7 +79,7 @@ describe('WishListItem schema', () => {
       user_name: 'testuser',
       item_name: 'Valid Item',
       model: 'Model Z',
-      price: '29.99',
+      price: 29.99,
       store: 'Some Store',
     });
     const saved = await item.save();

@@ -17,7 +17,7 @@
           </tr>
           <tr>
             <td><label>Price</label></td>
-            <td><input v-model="wish_item.price" type="text" /></td>
+            <td><input v-model.number="wish_item.price" type="number" min="0" step="0.01" /></td>
           </tr>
           <tr>
             <td><label>Store / URL</label></td>
@@ -69,7 +69,7 @@
           user_name:        '',
           item_name:        '',
           model:            '',
-          price:            '',
+          price:            null,
           store:            '',
           item_create_date: '',
         },
@@ -119,7 +119,7 @@
           user_name:        '',
           item_name:        '',
           model:            '',
-          price:            '',
+          price:            null,
           store:            '',
           item_create_date: '',
         }
