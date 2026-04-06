@@ -28,7 +28,7 @@
 - [x] Add ownership verification to /WishList/Update and /WishList/Delete (any user can modify any item)
 - [x] Move visibleToGroups filtering to the server (currently client-side only — not a security boundary)
 - [x] Fix GET /Groups/Members — verify requester is a member of the group before returning member list
-- [ ] OAuth callback leaks email in URL (?oauth_username=) — find a safer handoff mechanism
+- [x] OAuth callback leaks email in URL (?oauth_username=) — replaced with ?oauth_success=1; client calls /Auth/Me to get identity from session
 - [ ] Add CSRF protection to POST endpoints
 
 ## API & Data Model

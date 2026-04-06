@@ -35,11 +35,8 @@
         sessionStorage.setItem('postLoginRedirect', query.redirect);
       }
 
-      if (query.oauth_username) {
-        const email = decodeURIComponent(query.oauth_username);
-        this.$store.commit('set_vuex_globalUser', email);
-        this.$store.commit('set_vuex_isAuthenticated', true);
-        // Fetch full profile (including displayName) from the server session
+      if (query.oauth_success) {
+        // Fetch user identity from the server session — email never touches the URL
         await this.$store.dispatch('fetchCurrentUser');
         const redirect = sessionStorage.getItem('postLoginRedirect') || '/my-wish-list';
         sessionStorage.removeItem('postLoginRedirect');

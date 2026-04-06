@@ -368,11 +368,11 @@ app.get('/Auth/OAuth/google',
   passport.authenticate('google', { scope: ['profile', 'email'] })
 );
 
-// Google OAuth callback — redirects client to /login?oauth_username=<email>
+// Google OAuth callback — redirects client to /login?oauth_success=1
 app.get('/Auth/OAuth/google/callback',
   passport.authenticate('google', { failureRedirect: `${frontendUrl}/login?error=oauth_failed` }),
   (req, res) => {
-    res.redirect(`${frontendUrl}/login?oauth_username=${encodeURIComponent(req.user.username)}`);
+    res.redirect(`${frontendUrl}/login?oauth_success=1`);
   }
 );
 
@@ -381,11 +381,11 @@ app.get('/Auth/OAuth/facebook',
   passport.authenticate('facebook', { scope: ['email'] })
 );
 
-// Facebook OAuth callback — redirects client to /login?oauth_username=<email>
+// Facebook OAuth callback — redirects client to /login?oauth_success=1
 app.get('/Auth/OAuth/facebook/callback',
   passport.authenticate('facebook', { failureRedirect: `${frontendUrl}/login?error=oauth_failed` }),
   (req, res) => {
-    res.redirect(`${frontendUrl}/login?oauth_username=${encodeURIComponent(req.user.username)}`);
+    res.redirect(`${frontendUrl}/login?oauth_success=1`);
   }
 );
 
