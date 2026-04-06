@@ -61,14 +61,33 @@ describe('Groups.vue — rendering', () => {
     expect(friendsRow.find('.invite-code-input').exists()).toBe(true)
   })
 
-  test('shows spinner when groups is empty and user is authenticated', () => {
-    const wrapper = createWrapper([])
+  test('shows spinner when groupsLoaded is false', () => {
+    const store = createStore('me@example.com', true, true, [])
+    store.commit('set_groups_loaded', false)
+    const wrapper = shallowMount(Groups, { localVue, store, mocks: { $route: { query: {} } } })
     expect(wrapper.find('.fa-spinner').exists()).toBe(true)
   })
 
   test('does not show spinner when groups are loaded', () => {
     const wrapper = createWrapper(sampleGroups)
     expect(wrapper.find('.fa-spinner').exists()).toBe(false)
+  })
+
+  test('shows error message when groupsError is true', () => {
+    const store = createStore('me@example.com', true, true, [])
+    store.commit('set_groups_loaded', true)
+    store.commit('set_groups_error', true)
+    const wrapper = shallowMount(Groups, { localVue, store, mocks: { $route: { query: {} } } })
+    expect(wrapper.find('.error-text').exists()).toBe(true)
+  })
+
+  test('shows "not in any groups" when loaded with no groups', () => {
+    const store = createStore('me@example.com', true, true, [])
+    store.commit('set_groups_loaded', true)
+    const wrapper = shallowMount(Groups, { localVue, store, mocks: { $route: { query: {} } } })
+    expect(wrapper.find('.fa-spinner').exists()).toBe(false)
+    expect(wrapper.find('.error-text').exists()).toBe(false)
+    expect(wrapper.text()).toContain('not in any groups')
   })
 })
 

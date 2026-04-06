@@ -22,6 +22,7 @@
     <section class="group-list card">
       <h5>Your Groups</h5>
       <p v-if="loading"><i class="fas fa-spinner fa-spin"></i> Loading...</p>
+      <p v-else-if="fetchError" class="error-text">Unable to load groups. Please refresh the page.</p>
       <table v-else-if="groups.length">
         <thead>
           <tr>
@@ -88,8 +89,10 @@
         return this.$store.state.groups
       },
       loading() {
-        // Show spinner until the store has been populated (groups is empty and user is authenticated)
-        return this.groups.length === 0 && this.$store.state.vuex_isAuthenticated
+        return !this.$store.state.groupsLoaded
+      },
+      fetchError() {
+        return this.$store.state.groupsError
       },
       isInPublicGroup() {
         return this.groups.some(g => g.inviteCode === 'PUBLIC')
@@ -190,6 +193,10 @@
 
   h3 {
     margin-top: 0;
+  }
+
+  .error-text {
+    color: #d33c40;
   }
 
   section {

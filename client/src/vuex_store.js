@@ -11,6 +11,8 @@ const store = new Vuex.Store({
     vuex_isAuthenticated: localStorage.getItem('vuex_isAuthenticated') === 'true',
     navVisible:           localStorage.getItem('navVisible') !== 'false',
     groups:               [],
+    groupsLoaded:         false,
+    groupsError:          false,
   },
 
   mutations: {
@@ -36,6 +38,12 @@ const store = new Vuex.Store({
     set_groups(state, groups) {
       state.groups = groups
     },
+    set_groups_loaded(state, loaded) {
+      state.groupsLoaded = loaded
+    },
+    set_groups_error(state, error) {
+      state.groupsError = error
+    },
   },
 
   actions: {
@@ -47,7 +55,7 @@ const store = new Vuex.Store({
           commit('set_vuex_globalUser', data.username);
           commit('set_vuex_displayName', data.displayName || '');
           commit('set_vuex_isAuthenticated', true);
-          dispatch('fetchGroups');
+          await dispatch('fetchGroups');
         } else {
           commit('set_vuex_globalUser', '');
           commit('set_vuex_isAuthenticated', false);
@@ -63,9 +71,17 @@ const store = new Vuex.Store({
     async fetchGroups({ commit }) {
       try {
         const res = await fetch('/Groups', { credentials: 'include' });
-        if (res.ok) commit('set_groups', await res.json());
+        if (res.ok) {
+          commit('set_groups', await res.json());
+          commit('set_groups_error', false);
+        } else {
+          commit('set_groups_error', true);
+        }
       } catch (err) {
         console.error('fetchGroups:', err);
+        commit('set_groups_error', true);
+      } finally {
+        commit('set_groups_loaded', true);
       }
     },
   }
