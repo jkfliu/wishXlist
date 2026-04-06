@@ -41,5 +41,5 @@
 
 ## Frontend
 - [ ] Re-validate server session on route change (router currently trusts localStorage auth state)
-- [ ] (Scalability) Deduplicate GET /WishList fetches across MyWishList and GroupWishLists (by cacheing it in Vuex)
+- [x] (Scalability) Deduplicate GET /Groups fetches — groups cached in Vuex, fetched once on login/app load; MyWishList, GroupWishLists, and Groups.vue all read from store
 

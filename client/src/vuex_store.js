@@ -10,6 +10,7 @@ const store = new Vuex.Store({
     vuex_displayName:     localStorage.getItem('vuex_displayName')     || '',
     vuex_isAuthenticated: localStorage.getItem('vuex_isAuthenticated') === 'true',
     navVisible:           localStorage.getItem('navVisible') !== 'false',
+    groups:               [],
   },
 
   mutations: {
@@ -32,10 +33,13 @@ const store = new Vuex.Store({
     set_nav_visible(state, bool) {
       state.navVisible = bool
     },
+    set_groups(state, groups) {
+      state.groups = groups
+    },
   },
 
   actions: {
-    async fetchCurrentUser({ commit }) {
+    async fetchCurrentUser({ commit, dispatch }) {
       try {
         const res = await fetch('/Auth/Me', { credentials: 'include' });
         if (res.ok) {
@@ -43,15 +47,27 @@ const store = new Vuex.Store({
           commit('set_vuex_globalUser', data.username);
           commit('set_vuex_displayName', data.displayName || '');
           commit('set_vuex_isAuthenticated', true);
+          dispatch('fetchGroups');
         } else {
           commit('set_vuex_globalUser', '');
           commit('set_vuex_isAuthenticated', false);
+          commit('set_groups', []);
         }
       } catch {
         commit('set_vuex_globalUser', '');
         commit('set_vuex_isAuthenticated', false);
+        commit('set_groups', []);
       }
-    }
+    },
+
+    async fetchGroups({ commit }) {
+      try {
+        const res = await fetch('/Groups', { credentials: 'include' });
+        if (res.ok) commit('set_groups', await res.json());
+      } catch (err) {
+        console.error('fetchGroups:', err);
+      }
+    },
   }
 })
 

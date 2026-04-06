@@ -39,23 +39,20 @@
         loading:         true,
         wish_list_array: [],
         display_mode:    'group',
-        groups:          [],
         selectedGroupId: null,
       }
     },
 
+    computed: {
+      groups() {
+        return this.$store.state.groups
+      },
+    },
+
     async mounted() {
-      try {
-        const groupsRes = await fetch('/Groups', { credentials: 'include' })
-        if (!groupsRes.ok) throw new Error(`Server error: ${groupsRes.status}`)
-        this.groups = await groupsRes.json()
-        if (!this.groups.length) return
-        this.selectedGroupId = this.groups[0]._id
-        await this.loadWishListForGroup()
-      } catch (error) {
-        console.error(error)
-        alert('Unable to load Group Wish Lists. Please contact Support')
-      }
+      if (!this.groups.length) return
+      this.selectedGroupId = this.groups[0]._id
+      await this.loadWishListForGroup()
     },
 
     methods: {

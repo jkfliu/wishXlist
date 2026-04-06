@@ -75,8 +75,6 @@
 
     data() {
       return {
-        loading:           true,
-        groups:            [],
         newGroupName:      '',
         joinCode:          '',
         showingMembersFor: null,
@@ -86,6 +84,13 @@
     },
 
     computed: {
+      groups() {
+        return this.$store.state.groups
+      },
+      loading() {
+        // Show spinner until the store has been populated (groups is empty and user is authenticated)
+        return this.groups.length === 0 && this.$store.state.vuex_isAuthenticated
+      },
       isInPublicGroup() {
         return this.groups.some(g => g.inviteCode === 'PUBLIC')
       },
@@ -95,7 +100,6 @@
     },
 
     async mounted() {
-      await this.fetchGroups()
       const code = this.$route.query.join
       if (code && !this.groups.some(g => g.inviteCode === code)) {
         await this.joinGroup(code)
@@ -103,18 +107,6 @@
     },
 
     methods: {
-      async fetchGroups() {
-        try {
-          const response = await fetch('/Groups', { credentials: 'include' })
-          if (!response.ok) throw new Error(`Server error: ${response.status}`)
-          this.groups = await response.json()
-        } catch (error) {
-          console.error(error)
-          alert('fetchGroups(): Unable to retrieve groups. Please contact Support')
-        } finally {
-          this.loading = false
-        }
-      },
 
       async createGroup() {
         if (!this.newGroupName) return
@@ -126,9 +118,8 @@
             body:        JSON.stringify({ name: this.newGroupName }),
           })
           if (!response.ok) throw new Error(`Server error: ${response.status}`)
-          const data = await response.json()
-          this.groups = [...this.groups, data]
           this.newGroupName = ''
+          await this.$store.dispatch('fetchGroups')
         } catch (error) {
           console.error(error)
           alert('createGroup(): Unable to create group. Please contact Support')
@@ -145,11 +136,8 @@
             body:        JSON.stringify({ inviteCode: code }),
           })
           if (!response.ok) throw new Error(`Server error: ${response.status}`)
-          const data = await response.json()
-          if (!this.groups.some(g => g._id === data._id)) {
-            this.groups = [...this.groups, data]
-          }
           if (code === this.joinCode) this.joinCode = ''
+          await this.$store.dispatch('fetchGroups')
         } catch (error) {
           console.error(error)
           alert('joinGroup(): Unable to join group. Please contact Support')
@@ -166,8 +154,7 @@
             body:        JSON.stringify({ groupId }),
           })
           if (!response.ok) throw new Error(`Server error: ${response.status}`)
-          await response.json()
-          this.groups = this.groups.filter(g => g._id !== groupId)
+          await this.$store.dispatch('fetchGroups')
         } catch (error) {
           console.error(error)
           alert('leaveGroup(): Unable to leave group. Please contact Support')

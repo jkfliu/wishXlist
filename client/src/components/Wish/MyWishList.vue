@@ -31,27 +31,20 @@
       return {
         wish_list_array: [],
         display_mode:    'self',
-        groups:          [],
       }
     },
 
+    computed: {
+      groups() {
+        return this.$store.state.groups
+      },
+    },
+
     async mounted() {
-      await Promise.all([
-        this.getWishList(this.$store.state.vuex_globalUser),
-        this.fetchGroups(),
-      ])
+      await this.getWishList(this.$store.state.vuex_globalUser)
     },
 
     methods: {
-      async fetchGroups() {
-        try {
-          const response = await fetch('/Groups', { credentials: 'include' })
-          if (response.ok) this.groups = await response.json()
-        } catch (error) {
-          console.error(error)
-        }
-      },
-
       async getWishList(user) {
         try {
           const response = await fetch('/WishList/' + user, { credentials: 'include' })

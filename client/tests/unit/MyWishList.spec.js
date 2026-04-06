@@ -7,7 +7,7 @@ const sampleGroups = [
   { _id: 'g2', name: 'My Friends', inviteCode: 'A1B2C3D4' },
 ]
 
-function createWrapper(store = createStore('me@example.com')) {
+function createWrapper(store = createStore('me@example.com', true, true, sampleGroups)) {
   return shallowMount(MyWishList, { localVue, store })
 }
 
@@ -20,58 +20,44 @@ afterEach(() => {
 })
 
 
-describe('MyWishList.vue — fetchGroups()', () => {
-  test('fetches groups on mount and stores them', async () => {
-    global.fetch = jest.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => [] })            // getWishList
-      .mockResolvedValueOnce({ ok: true, json: async () => sampleGroups })  // fetchGroups
+describe('MyWishList.vue — groups from Vuex store', () => {
+  test('reads groups from Vuex store (no /Groups fetch)', async () => {
+    global.fetch = jest.fn().mockResolvedValueOnce({ ok: true, json: async () => [] })
     const wrapper = createWrapper()
     await new Promise(r => setTimeout(r, 0))
     expect(wrapper.vm.groups).toEqual(sampleGroups)
+    const groupsFetch = global.fetch.mock.calls.find(c => c[0] === '/Groups')
+    expect(groupsFetch).toBeUndefined()
   })
 
-  test('calls GET /Groups with credentials', async () => {
-    global.fetch = jest.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => [] })
-      .mockResolvedValueOnce({ ok: true, json: async () => [] })
-    createWrapper()
-    await new Promise(r => setTimeout(r, 0))
-    const groupCall = global.fetch.mock.calls.find(c => c[0] === '/Groups')
-    expect(groupCall).toBeDefined()
-    expect(groupCall[1]).toEqual(expect.objectContaining({ credentials: 'include' }))
-  })
-
-  test('groups defaults to empty array when fetch fails', async () => {
-    global.fetch = jest.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => [] })
-      .mockResolvedValueOnce({ ok: false, status: 500 })
+  test('passes groups to both wish-item-form and wish-list-table via template', async () => {
+    global.fetch = jest.fn().mockResolvedValueOnce({ ok: true, json: async () => [] })
     const wrapper = createWrapper()
     await new Promise(r => setTimeout(r, 0))
-    expect(wrapper.vm.groups).toEqual([])
+    const matches = wrapper.html().match(/groups=/g)
+    expect(matches).toHaveLength(2)
   })
 })
 
 
-describe('MyWishList.vue — groups prop passed to children', () => {
-  test('passes groups to wish-item-form', async () => {
-    global.fetch = jest.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => [] })
-      .mockResolvedValueOnce({ ok: true, json: async () => sampleGroups })
-    const wrapper = createWrapper()
+describe('MyWishList.vue — getWishList()', () => {
+  test('fetches wish list on mount', async () => {
+    global.fetch = jest.fn().mockResolvedValueOnce({ ok: true, json: async () => [] })
+    createWrapper()
     await new Promise(r => setTimeout(r, 0))
-    expect(wrapper.vm.groups).toEqual(sampleGroups)
-    // Verify the template binds :groups to both children
-    expect(wrapper.html()).toContain('groups=')
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/WishList/'),
+      expect.objectContaining({ credentials: 'include' })
+    )
   })
 
-  test('passes groups to both wish-item-form and wish-list-table via template', async () => {
-    global.fetch = jest.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => [] })
-      .mockResolvedValueOnce({ ok: true, json: async () => sampleGroups })
-    const wrapper = createWrapper()
+  test('injects displayName from store into each item', async () => {
+    const store = createStore('me@example.com', true, true, sampleGroups)
+    store.commit('set_vuex_displayName', 'Me User')
+    const items = [{ _id: 'w1', user_name: 'me@example.com', item_name: 'Thing' }]
+    global.fetch = jest.fn().mockResolvedValueOnce({ ok: true, json: async () => items })
+    const wrapper = shallowMount(MyWishList, { localVue, store })
     await new Promise(r => setTimeout(r, 0))
-    // shallowMount renders stub attributes — verify :groups binding appears twice (form + table)
-    const matches = wrapper.html().match(/groups=/g)
-    expect(matches).toHaveLength(2)
+    expect(wrapper.vm.wish_list_array[0].displayName).toBe('Me User')
   })
 })
