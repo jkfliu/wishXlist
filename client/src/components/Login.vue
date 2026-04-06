@@ -20,11 +20,12 @@
       }
     },
 
-    mounted() {
+    async mounted() {
       const query = this.$route.query;
 
       if (query.logout) {
         this.$store.commit('set_vuex_globalUser', '');
+        this.$store.commit('set_vuex_displayName', '');
         this.$store.commit('set_vuex_isAuthenticated', false);
         this.message = 'You have been logged out.';
       }
@@ -38,6 +39,8 @@
         const email = decodeURIComponent(query.oauth_username);
         this.$store.commit('set_vuex_globalUser', email);
         this.$store.commit('set_vuex_isAuthenticated', true);
+        // Fetch full profile (including displayName) from the server session
+        await this.$store.dispatch('fetchCurrentUser');
         const redirect = sessionStorage.getItem('postLoginRedirect') || '/my-wish-list';
         sessionStorage.removeItem('postLoginRedirect');
         this.$router.push(redirect);

@@ -6,6 +6,7 @@
       <thead>
         <tr>
           <th>User</th>
+          <th data-sort="displayName" @click="setSort('displayName')">Name {{ sortIndicator('displayName') }}</th>
           <th data-sort="item_name"  @click="setSort('item_name')">Item Name* {{ sortIndicator('item_name') }}</th>
           <th data-sort="model"      @click="setSort('model')">Model {{ sortIndicator('model') }}</th>
           <th data-sort="price"      @click="setSort('price')">Price {{ sortIndicator('price') }}</th>
@@ -20,6 +21,7 @@
       <tbody>
         <tr v-for="wish_item in sortedList" :key="wish_item._id">
           <td> {{ wish_item.user_name }} </td>
+          <td> {{ wish_item.displayName }} </td>
 
           <td v-if="editing === wish_item._id"><input type="text" v-model="wish_item.item_name" /></td>
           <td v-else>{{ wish_item.item_name }}</td>

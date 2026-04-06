@@ -190,11 +190,16 @@ app.get('/WishList', async (req, res) => {
       const group = await groupModel.findById(groupId);
       if (!group) return res.status(404).json({ error: 'Group not found' });
       if (!group.members.includes(req.user.username)) return res.status(403).json({ error: 'Forbidden' });
-      const data = await wishListModel.find({
+      const items = await wishListModel.find({
         user_name: { $in: group.members, $ne: req.user.username },
         // Items with no field or empty array are visible to all groups (legacy + default)
         $or: [{ visibleToGroups: { $exists: false } }, { visibleToGroups: { $size: 0 } }, { visibleToGroups: groupId }],
       });
+      // Attach displayName to each item for the client to display
+      const usernames = [...new Set(items.map(i => i.user_name))];
+      const users = await securityUserModel.find({ username: { $in: usernames } }, 'username displayName');
+      const nameMap = Object.fromEntries(users.map(u => [u.username, u.displayName]));
+      const data = items.map(i => ({ ...i.toObject(), displayName: nameMap[i.user_name] || i.user_name }));
       return res.json(data);
     }
     const data = await wishListModel.find({});

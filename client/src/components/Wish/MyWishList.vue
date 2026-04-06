@@ -56,7 +56,8 @@
         try {
           const response = await fetch('/WishList/' + user, { credentials: 'include' })
           const data     = await response.json()
-          this.wish_list_array = data
+          const displayName = this.$store.state.vuex_displayName
+          this.wish_list_array = data.map(item => ({ ...item, displayName }))
         } catch (error) {
           console.error(error)
           alert("getWishList(): Unable to retrieve Wish List items. Please contact Support")
@@ -73,7 +74,7 @@
           })
           if (!response.ok) throw new Error(`Server error: ${response.status}`)
           const data = await response.json()
-          this.wish_list_array = [...this.wish_list_array, data]
+          this.wish_list_array = [...this.wish_list_array, { ...data, displayName: this.$store.state.vuex_displayName }]
         } catch (error) {
           console.error(error)
           alert("addWishItem(): Unable to add Wish List item. Please contact Support")

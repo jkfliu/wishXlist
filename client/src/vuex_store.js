@@ -7,6 +7,7 @@ Vue.use(Vuex)
 const store = new Vuex.Store({
   state: {
     vuex_globalUser:      localStorage.getItem('vuex_globalUser')      || '',
+    vuex_displayName:     localStorage.getItem('vuex_displayName')     || '',
     vuex_isAuthenticated: localStorage.getItem('vuex_isAuthenticated') === 'true',
     navVisible:           localStorage.getItem('navVisible') !== 'false',
   },
@@ -15,6 +16,10 @@ const store = new Vuex.Store({
     set_vuex_globalUser(state, user) {
       state.vuex_globalUser = user
       localStorage.setItem('vuex_globalUser', user)
+    },
+    set_vuex_displayName(state, name) {
+      state.vuex_displayName = name
+      localStorage.setItem('vuex_displayName', name)
     },
     set_vuex_isAuthenticated(state, bool) {
       state.vuex_isAuthenticated = bool
@@ -36,6 +41,7 @@ const store = new Vuex.Store({
         if (res.ok) {
           const data = await res.json();
           commit('set_vuex_globalUser', data.username);
+          commit('set_vuex_displayName', data.displayName || '');
           commit('set_vuex_isAuthenticated', true);
         } else {
           commit('set_vuex_globalUser', '');

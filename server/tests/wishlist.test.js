@@ -156,6 +156,15 @@ describe('GET /WishList?groupId= — server-side group filtering', () => {
     expect(res.status).toBe(200);
     expect(res.body.some(item => item.item_name === 'Legacy item')).toBe(true);
   });
+
+  test('attaches displayName to each item', async () => {
+    const agent = request.agent(app);
+    await agent.post('/Auth/Test/FakeLogin').send({ username: 'testuser@example.com' });
+    const res = await agent.get(`/WishList?groupId=${group._id}`);
+    expect(res.status).toBe(200);
+    expect(res.body.every(item => item.displayName)).toBe(true);
+    expect(res.body.find(item => item.user_name === 'otheruser@example.com').displayName).toBe('Other User');
+  });
 });
 
 describe('POST /WishList/Create', () => {
