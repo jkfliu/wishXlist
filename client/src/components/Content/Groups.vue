@@ -21,7 +21,8 @@
 
     <section class="group-list card">
       <h5>Your Groups</h5>
-      <table v-if="groups.length">
+      <p v-if="loading"><i class="fas fa-spinner fa-spin"></i> Loading...</p>
+      <table v-else-if="groups.length">
         <thead>
           <tr>
             <th>Group Name</th>
@@ -63,7 +64,7 @@
           </tr>
         </tbody>
       </table>
-      <p v-else>You are not in any groups.</p>
+      <p v-else>You are not in any groups yet.</p>
     </section>
   </div>
 </template>
@@ -74,6 +75,7 @@
 
     data() {
       return {
+        loading:           true,
         groups:            [],
         newGroupName:      '',
         joinCode:          '',
@@ -109,6 +111,8 @@
         } catch (error) {
           console.error(error)
           alert('fetchGroups(): Unable to retrieve groups. Please contact Support')
+        } finally {
+          this.loading = false
         }
       },
 

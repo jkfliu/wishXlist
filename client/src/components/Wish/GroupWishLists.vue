@@ -14,7 +14,9 @@
     </p>
 
     <!-- Pass down the array to the child component -->
+    <p v-if="loading"><i class="fas fa-spinner fa-spin"></i> Loading...</p>
     <wish-list-table
+      v-else
       v-bind:wish_list_array="wish_list_array"
       v-bind:display_mode="display_mode"
       @gift:wish_item="giftWishItem"/>
@@ -34,6 +36,7 @@
 
     data() {
       return {
+        loading:         true,
         wish_list_array: [],
         display_mode:    'group',
         groups:          [],
@@ -58,6 +61,7 @@
     methods: {
       async loadWishListForGroup() {
         if (!this.selectedGroupId) return
+        this.loading = true
         try {
           const res = await fetch(`/WishList?groupId=${this.selectedGroupId}`, { credentials: 'include' })
           if (!res.ok) throw new Error(`Server error: ${res.status}`)
@@ -65,6 +69,8 @@
         } catch (error) {
           console.error(error)
           alert('loadWishListForGroup(): Unable to retrieve Wish List items. Please contact Support')
+        } finally {
+          this.loading = false
         }
       },
 

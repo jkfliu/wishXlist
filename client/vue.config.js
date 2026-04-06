@@ -1,5 +1,6 @@
 module.exports = {
   devServer: {
+    host: 'localhost',
     proxy: {
       '/Auth': {
         target: 'http://localhost:3000',
