@@ -3,12 +3,13 @@
 ## Auth
 - [x] Switch Facebook app from Development to Live mode (add privacy policy URL, data deletion URL, verify app domains)
 - [ ] Consider a Passkey-First Approach: default to passkeys with email OTP as fallback (no passwords)
-- [ ] Download user name / avatars for a more user-friendly view
+- [x] Download user displayName — shown as a column in wish list table (fetched from OAuth profile, stored in Vuex)
+- [ ] Download user avatars for a more user-friendly view
 
 ## Groups
 - [x] Reconsider whether own wish list items should be visible when viewing Group Wish Lists
 - [x] Consider whether Wish List items can be group-specific (i.e. visible only to selected groups)
-- [x] Debug delay in displaying Group Wish List
+- [x] Debug delay in displaying Group Wish List — loading spinners added; groups cached in Vuex to eliminate redundant fetches
 - [ ] Create option to share invite link with custom 'Welcome to wishXlist' text
 - [ ] Do Groups need Admin users who can remove users from Groups
 - [x] Shareable invite link for groups — when a group is created, generate a URL that non-members can open to join directly (e.g. /join?code=XXXX)
