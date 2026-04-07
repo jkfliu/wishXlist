@@ -110,6 +110,10 @@
       },
     },
 
+    beforeDestroy() {
+      clearTimeout(this.copiedTimer)
+    },
+
     async mounted() {
       const code = this.$route.query.join
       if (code && !this.groups.some(g => g.inviteCode === code)) {
@@ -198,7 +202,7 @@
       },
 
       isAdmin(group) {
-        return group.admins && group.admins.includes(this.$store.state.vuex_globalUser)
+        return group.admins.includes(this.$store.state.vuex_globalUser)
       },
 
       async deleteGroup(groupId) {

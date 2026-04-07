@@ -8,6 +8,7 @@
     <br>Further work to be done:
       <ul>
         <li>(Done) Allowing wish list items to be group-specific</li>
+        <li>(Done) Implemented DB indexing and Vuex cacheing</li>
       </ul>
    
   </div>

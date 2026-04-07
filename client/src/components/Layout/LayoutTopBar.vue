@@ -8,8 +8,8 @@
 
     <div class="menu-right">
       <!-- If user is authenticated, display user welcome msg + link to profile + logout button -->
-      <div v-if="this.$store.state.vuex_isAuthenticated" class="user-menu">
-        <span class="welcome-text">Welcome back<router-link :to="{name: 'profile'}">{{ this.$store.state.vuex_displayName || this.$store.state.vuex_globalUser }}</router-link></span>
+      <div v-if="$store.state.vuex_isAuthenticated" class="user-menu">
+        <span class="welcome-text">Welcome back<router-link :to="{name: 'profile'}">{{ $store.state.vuex_displayName || $store.state.vuex_globalUser }}</router-link></span>
         <a href="#" @click.prevent="confirmLogout" class="logout-link" title="Logout">
           <i class="fas fa-sign-out-alt"></i>
         </a>

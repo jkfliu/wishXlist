@@ -353,11 +353,13 @@ app.post('/Groups/Delete', async (req, res) => {
     const group = await groupModel.findById(req.body.groupId);
     if (!group) return res.status(404).json({ error: 'Group not found' });
     if (!group.admins.includes(req.user.username)) return res.status(403).json({ error: 'Not group admin' });
-    await groupModel.findByIdAndDelete(req.body.groupId);
-    await wishListModel.updateMany(
-      { visibleToGroups: req.body.groupId },
-      { $pull: { visibleToGroups: req.body.groupId } }
-    );
+    await Promise.all([
+      groupModel.findByIdAndDelete(req.body.groupId),
+      wishListModel.updateMany(
+        { visibleToGroups: req.body.groupId },
+        { $pull: { visibleToGroups: req.body.groupId } }
+      ),
+    ]);
     return res.json({ success: true });
   } catch (err) {
     console.error(err);
