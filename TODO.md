@@ -9,6 +9,7 @@
 ## Groups
 - [ ] Group Admin: ability to add/change Group Admins (currently creator is permanent admin)
 - [ ] Group Admin: allow Admin to remove members from Groups
+- [ ] Data migration: populate admins field for legacy groups created before Group Admin feature (admins: [] currently)
 - [x] Create option to share invite link with custom 'Welcome to wishXlist' text — Web Share API with clipboard fallback
 - [x] Reconsider whether own wish list items should be visible when viewing Group Wish Lists
 - [x] Consider whether Wish List items can be group-specific (i.e. visible only to selected groups)
