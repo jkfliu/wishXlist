@@ -13,18 +13,10 @@ function createWrapper(store) {
   })
 }
 
-describe('LayoutTopBar.vue — hamburger toggle', () => {
-  test('renders a nav toggle button', () => {
+describe('LayoutTopBar.vue — logo', () => {
+  test('renders the app logo link', () => {
     const store = createStore()
     const wrapper = createWrapper(store)
-    expect(wrapper.find('.nav-toggle-btn').exists()).toBe(true)
-  })
-
-  test('clicking the toggle button commits toggle_nav_visible', async () => {
-    const store = createStore()
-    const commitSpy = jest.spyOn(store, 'commit')
-    const wrapper = createWrapper(store)
-    await wrapper.find('.nav-toggle-btn').trigger('click')
-    expect(commitSpy).toHaveBeenCalledWith('toggle_nav_visible')
+    expect(wrapper.find('img').exists()).toBe(true)
   })
 })

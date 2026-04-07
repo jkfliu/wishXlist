@@ -16,6 +16,9 @@
       <router-link :to="{ name: 'about'            }" title="About">
         <i class="fas fa-info-circle"></i><span>About</span>
       </router-link>
+      <button class="toggle-btn" @click="$store.commit('toggle_nav_visible')" :title="$store.state.navVisible ? 'Collapse' : 'Expand'">
+        <i :class="$store.state.navVisible ? 'fas fa-chevron-left' : 'fas fa-chevron-right'"></i><span>Collapse</span>
+      </button>
     </div>
   </div>
 </template>
@@ -74,5 +77,45 @@
   .sidebar a.active {
     background-color: #3972bd;
     color:            white;
+  }
+
+  .toggle-btn {
+    background:      #eee;
+    border:          none;
+    color:           black;
+    display:         flex;
+    align-items:     center;
+    gap:             10px;
+    padding:         12px;
+    width:           100%;
+    cursor:          pointer;
+    white-space:     nowrap;
+    overflow:        hidden;
+    font-size:       1rem;
+  }
+
+  .toggle-btn i {
+    min-width:   16px;
+    text-align:  center;
+    flex-shrink: 0;
+  }
+
+  .toggle-btn span {
+    opacity:    1;
+    transition: opacity 0.15s ease;
+  }
+
+  .toggle-btn:hover {
+    background-color: #ccc;
+  }
+
+  .sidebar.collapsed .toggle-btn {
+    justify-content: center;
+    gap:             0;
+  }
+
+  .sidebar.collapsed .toggle-btn span {
+    opacity: 0;
+    width:   0;
   }
 </style>

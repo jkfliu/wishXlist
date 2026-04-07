@@ -1,7 +1,6 @@
 <template>
   <div class="topnav">
     <div class="menu-left">
-      <button class="nav-toggle-btn" @click="$store.commit('toggle_nav_visible')" title="Toggle navigation">&#9776;</button>
       <router-link :to="{name: 'home'}">
         <img src="wish_X_list.logo.jpg" alt="wishXlist" height="80" align="center">
       </router-link>
@@ -9,16 +8,18 @@
 
     <div class="menu-right">
       <!-- If user is authenticated, display user welcome msg + link to profile + logout button -->
-      <span v-if="this.$store.state.vuex_isAuthenticated">
-        <span class="welcome-text">Welcome back <router-link :to="{name: 'profile'}">{{ this.$store.state.vuex_globalUser }}</router-link></span>
+      <div v-if="this.$store.state.vuex_isAuthenticated" class="user-menu">
+        <span class="welcome-text">Welcome back<router-link :to="{name: 'profile'}">{{ this.$store.state.vuex_displayName || this.$store.state.vuex_globalUser }}</router-link></span>
         <a href="#" @click.prevent="confirmLogout" class="logout-link" title="Logout">
-          <i class="fas fa-sign-out-alt fa-2x"></i> Logout
+          <i class="fas fa-sign-out-alt"></i>
         </a>
-      </span>
-      <!-- If user is not authenticated, display login icon -->
-      <span v-else>
-        <router-link :to="{name: 'login'}"><i class="fas fa-file-import fa-2x" title="Login"></i></router-link>
-      </span>
+      </div>
+      <!-- If not authenticated and not on the login page, show login icon -->
+      <div v-else-if="$route.name !== 'login'">
+        <router-link :to="{ name: 'login' }" title="Login">
+          <i class="fas fa-user-circle fa-2x"></i>
+        </router-link>
+      </div>
     </div>
 
   </div>
@@ -29,10 +30,10 @@
     name: 'layout-top-bar',
 
     methods: {
-      confirmLogout() {
-        if (confirm('Are you sure you want to log out?')) {
-          this.$router.push({ name: 'login', query: { logout: true } })
-        }
+      async confirmLogout() {
+        if (!confirm('Are you sure you want to log out?')) return
+        await fetch('/Auth/Logout', { method: 'POST', credentials: 'include' })
+        this.$router.push({ name: 'login', query: { logout: true } }).catch(() => {})
       },
     }
   }
@@ -46,7 +47,7 @@
 
   .topnav .menu-right {
     margin-left:    auto;
-    padding:        4px;
+    padding:        12px 8px 0 0;
   }
 
   .topnav a {
@@ -57,21 +58,16 @@
     font-weight:    bold;
   }
 
+  .user-menu {
+    display:        flex;
+    flex-direction: column;
+    align-items:    flex-end;
+  }
+
   .logout-link {
     cursor: pointer;
   }
-  .nav-toggle-btn {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 4px 8px;
-    margin-right: 4px;
-    vertical-align: middle;
-    color: inherit;
-  }
-
-  @media (max-width: 600px) {
+@media (max-width: 600px) {
     .topnav img {
       height: 48px;
     }

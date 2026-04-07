@@ -37,7 +37,7 @@
 ## Frontend
 - [ ] When left menu is minimised, show icons instead of hiding it completely
 - [ ] Cache - Wish List items (GET /WishList), Group member (GET /Groups/Members?groupId=)
-- [ ] When logged out, logout icon should not appear
+- [x] When logged out, logout icon should not appear
 - [x] Ability to hide/toggle the left-hand side navigation menu
 - [x] Sort Wish List by column headings (e.g. Price)
 - [x] Optimise for mobile viewing

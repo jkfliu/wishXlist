@@ -4,21 +4,6 @@
     <p><i>Join a Group to see the Wish Lists of other members</i>
     <br><i>The Public group is open to everyone — join it to share your Wish List with all other Public members</i></p>
 
-    <div class="card">
-      <section class="group-create">
-        <h5>Create a New Group</h5>
-        <input v-model="newGroupName" type="text" placeholder="Group name" />
-        <button @click="createGroup">Create</button>
-      </section>
-
-      <section class="group-join">
-        <h5>Join a Group</h5>
-        <input v-model="joinCode" type="text" placeholder="Invite code" />
-        <button @click="joinGroup()">Join</button>
-        <span v-if="!isInPublicGroup"> or <button @click="joinGroup('PUBLIC')">Join default Public Group</button></span>
-      </section>
-    </div>
-
     <section class="group-list card">
       <h5>Your Groups</h5>
       <p v-if="loading"><i class="fas fa-spinner fa-spin"></i> Loading...</p>
@@ -71,6 +56,25 @@
       </table>
       <p v-else>You are not in any groups yet.</p>
     </section>
+
+    <div class="card">
+      <section class="group-create">
+        <h5>Create a New Group</h5>
+        <div class="inline-form">
+          <input v-model="newGroupName" type="text" placeholder="Group name" />
+          <button @click="createGroup">Create</button>
+        </div>
+      </section>
+
+      <section class="group-join">
+        <h5>Join a Group</h5>
+        <div class="inline-form">
+          <input v-model="joinCode" type="text" placeholder="Invite code" />
+          <button @click="joinGroup()">Join</button>
+          <span v-if="!isInPublicGroup"> or <button @click="joinGroup('PUBLIC')">Join Public Group</button></span>
+        </div>
+      </section>
+    </div>
   </div>
 </template>
 
@@ -237,6 +241,16 @@
   section {
     margin-bottom: 0;
   }
+  .inline-form {
+    display:     flex;
+    align-items: center;
+    gap:         6px;
+  }
+
+  .inline-form input {
+    width: 15rem;
+  }
+
   .group-create {
     margin-bottom: 1rem;
     padding-bottom: 1rem;
