@@ -40,6 +40,7 @@ app.use(cors({ origin: corsOrigins, credentials: true }));
 // POST /Groups/Create                    - Create a new group
 // POST /Groups/Join                      - Join a group by invite code
 // POST /Groups/Leave                     - Leave a group
+// POST /Groups/Delete                    - Delete a group (Group Admin only); cascades visibleToGroups cleanup
 // GET  /Groups/Members                   - Return members of a group (requester must be a member)
 app.options('/WishList/:user',       cors());
 app.options('/WishList/Delete/:_id', cors());
@@ -302,6 +303,7 @@ app.post('/Groups/Create', async (req, res) => {
       name:       req.body.name,
       inviteCode: inviteCode,
       members:    [req.user.username],
+      admins:     [req.user.username],
     });
     return res.json(data);
   } catch (err) {
@@ -338,6 +340,25 @@ app.post('/Groups/Leave', async (req, res) => {
     );
     if (!data) return res.status(404).json({ error: 'Group not found' });
     return res.json(data);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete a group (Group Admin only); cascades visibleToGroups cleanup on WishList items
+app.post('/Groups/Delete', async (req, res) => {
+  if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
+  try {
+    const group = await groupModel.findById(req.body.groupId);
+    if (!group) return res.status(404).json({ error: 'Group not found' });
+    if (!group.admins.includes(req.user.username)) return res.status(403).json({ error: 'Not group admin' });
+    await groupModel.findByIdAndDelete(req.body.groupId);
+    await wishListModel.updateMany(
+      { visibleToGroups: req.body.groupId },
+      { $pull: { visibleToGroups: req.body.groupId } }
+    );
+    return res.json({ success: true });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: err.message });

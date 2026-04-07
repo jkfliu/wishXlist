@@ -38,5 +38,8 @@ const wishListItemSchema = new mongoose.Schema ({
   },
 });
 
+wishListItemSchema.index({ user_name: 1 });
+wishListItemSchema.index({ visibleToGroups: 1 });
+
 // Export the schema (rather than the model), to allow multiple connections to the DB
 module.exports = wishListItemSchema;

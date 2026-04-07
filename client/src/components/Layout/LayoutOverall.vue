@@ -5,7 +5,7 @@
     </header>
 
     <section class="main hbox space-between">
-      <nav v-if="$store.state.navVisible">
+      <nav :class="{ 'nav-collapsed': !$store.state.navVisible }">
         <slot name="nav" class="vbox h-100">Layout Overall - Navigation</slot>
       </nav>
       <content>
@@ -105,10 +105,14 @@
   }
 
   nav {
-    -webkit-flex: 1;
-    -moz-flex:    1;
-    -ms-flex:     1;
-    flex:         1;
-    overflow:     auto;
+    width:      180px;
+    min-width:  180px;
+    overflow:   hidden;
+    transition: width 0.2s ease, min-width 0.2s ease;
+  }
+
+  nav.nav-collapsed {
+    width:     48px;
+    min-width: 48px;
   }
 </style>

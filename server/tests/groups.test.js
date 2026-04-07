@@ -95,6 +95,14 @@ describe('POST /Groups/Create', () => {
     expect(res.body.members).toContain('grouptest@example.com');
   });
 
+  test('creator is added as group admin', async () => {
+    const agent = request.agent(app);
+    await agent.post('/Auth/Test/FakeLogin').send({ username: 'grouptest@example.com' });
+    const res = await agent.post('/Groups/Create').send({ name: 'Admin Group' });
+    expect(res.status).toBe(200);
+    expect(res.body.admins).toContain('grouptest@example.com');
+  });
+
   test('invite code is 8 uppercase hex chars', async () => {
     const agent = request.agent(app);
     await agent.post('/Auth/Test/FakeLogin').send({ username: 'grouptest@example.com' });
@@ -235,5 +243,71 @@ describe('GET /Groups/Members', () => {
     await agent.post('/Auth/Test/FakeLogin').send({ username: 'grouptest@example.com' });
     const res = await agent.get(`/Groups/Members?groupId=${privateGroup._id}`);
     expect(res.status).toBe(403);
+  });
+});
+
+
+/***********************/
+/* POST /Groups/Delete */
+/***********************/
+
+describe('POST /Groups/Delete', () => {
+  let deletableGroupId;
+  let wishListModel;
+
+  beforeAll(async () => {
+    const wishListItemSchema = require('../schema/WishListItem_schema');
+    const conn = mongoose.createConnection(process.env.MONGO_URI);
+    wishListModel = conn.model('WishList', wishListItemSchema, 'WishList');
+  });
+
+  beforeEach(async () => {
+    const g = await GroupModel.create({
+      name: `Deletable-${Date.now()}`, inviteCode: `DEL${Date.now()}`,
+      members: ['grouptest@example.com', 'other@example.com'],
+      admins:  ['grouptest@example.com'],
+    });
+    deletableGroupId = g._id.toString();
+  });
+
+  test('returns 401 when unauthenticated', async () => {
+    const res = await request(app).post('/Groups/Delete').send({ groupId: deletableGroupId });
+    expect(res.status).toBe(401);
+  });
+
+  test('returns 403 when requester is not an admin', async () => {
+    const agent = request.agent(app);
+    await agent.post('/Auth/Test/FakeLogin').send({ username: 'other@example.com' });
+    const res = await agent.post('/Groups/Delete').send({ groupId: deletableGroupId });
+    expect(res.status).toBe(403);
+  });
+
+  test('returns 404 for non-existent groupId', async () => {
+    const agent = request.agent(app);
+    await agent.post('/Auth/Test/FakeLogin').send({ username: 'grouptest@example.com' });
+    const res = await agent.post('/Groups/Delete').send({ groupId: '000000000000000000000000' });
+    expect(res.status).toBe(404);
+  });
+
+  test('admin can delete the group', async () => {
+    const agent = request.agent(app);
+    await agent.post('/Auth/Test/FakeLogin').send({ username: 'grouptest@example.com' });
+    const res = await agent.post('/Groups/Delete').send({ groupId: deletableGroupId });
+    expect(res.status).toBe(200);
+    const gone = await GroupModel.findById(deletableGroupId);
+    expect(gone).toBeNull();
+  });
+
+  test('deleting a group removes its ID from visibleToGroups on wish list items', async () => {
+    await wishListModel.create({
+      user_name: 'grouptest@example.com', item_name: 'Test Item',
+      visibleToGroups: [deletableGroupId, 'other-group-id'],
+    });
+    const agent = request.agent(app);
+    await agent.post('/Auth/Test/FakeLogin').send({ username: 'grouptest@example.com' });
+    await agent.post('/Groups/Delete').send({ groupId: deletableGroupId });
+    const item = await wishListModel.findOne({ user_name: 'grouptest@example.com', item_name: 'Test Item' });
+    expect(item.visibleToGroups).not.toContain(deletableGroupId);
+    expect(item.visibleToGroups).toContain('other-group-id');
   });
 });

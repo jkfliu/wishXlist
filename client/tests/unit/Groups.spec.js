@@ -3,8 +3,8 @@ import Groups from '@/components/Content/Groups.vue'
 import { localVue, createStore } from './helpers'
 
 const sampleGroups = [
-  { _id: 'g1', name: 'Public',     inviteCode: 'PUBLIC',   members: ['me@example.com'] },
-  { _id: 'g2', name: 'My Friends', inviteCode: 'A1B2C3D4', members: ['me@example.com'] },
+  { _id: 'g1', name: 'Public',     inviteCode: 'PUBLIC',   members: ['me@example.com'], admins: [] },
+  { _id: 'g2', name: 'My Friends', inviteCode: 'A1B2C3D4', members: ['me@example.com'], admins: ['me@example.com'] },
 ]
 
 function createWrapper(groups = sampleGroups, query = {}) {
@@ -45,6 +45,30 @@ describe('Groups.vue — rendering', () => {
   test('renders one row per group', () => {
     const wrapper = createWrapper()
     expect(wrapper.findAll('tbody tr').length).toBe(sampleGroups.length)
+  })
+
+  test('Delete button shown for non-Public groups where user is admin', () => {
+    const wrapper = createWrapper()
+    const rows = wrapper.findAll('tbody tr')
+    const friendsRow = rows.at(1)
+    expect(friendsRow.find('.delete-btn').exists()).toBe(true)
+  })
+
+  test('Delete button not shown for Public group', () => {
+    const wrapper = createWrapper()
+    const rows = wrapper.findAll('tbody tr')
+    const publicRow = rows.at(0)
+    expect(publicRow.find('.delete-btn').exists()).toBe(false)
+  })
+
+  test('Delete button not shown when user is not admin', () => {
+    const nonAdminGroups = [
+      { _id: 'g1', name: 'Public',     inviteCode: 'PUBLIC',   members: ['me@example.com'], admins: [] },
+      { _id: 'g2', name: 'My Friends', inviteCode: 'A1B2C3D4', members: ['me@example.com'], admins: ['other@example.com'] },
+    ]
+    const wrapper = createWrapper(nonAdminGroups)
+    const rows = wrapper.findAll('tbody tr')
+    expect(rows.at(1).find('.delete-btn').exists()).toBe(false)
   })
 
   test('Public group does not render a Show code button', () => {
@@ -250,6 +274,40 @@ describe('Groups.vue — leaveGroup()', () => {
 })
 
 
+describe('Groups.vue — deleteGroup()', () => {
+  test('does nothing if confirm() returns false', async () => {
+    window.confirm.mockReturnValue(false)
+    global.fetch = jest.fn()
+    const wrapper = createWrapper()
+    await wrapper.vm.deleteGroup('g2')
+    expect(global.fetch).not.toHaveBeenCalled()
+  })
+
+  test('POSTs to /Groups/Delete with groupId and credentials', async () => {
+    global.fetch = jest.fn().mockResolvedValueOnce({ ok: true, json: async () => ({}) })
+    const wrapper = createWrapper()
+    await wrapper.vm.deleteGroup('g2')
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/Groups/Delete',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify({ groupId: 'g2' }),
+      })
+    )
+  })
+
+  test('dispatches fetchGroups after success', async () => {
+    global.fetch = jest.fn().mockResolvedValueOnce({ ok: true, json: async () => ({}) })
+    const store = createStore('me@example.com', true, true, sampleGroups)
+    const dispatchSpy = jest.spyOn(store, 'dispatch')
+    const wrapper = shallowMount(Groups, { localVue, store, mocks: { $route: { query: {} } } })
+    await wrapper.vm.deleteGroup('g2')
+    expect(dispatchSpy).toHaveBeenCalledWith('fetchGroups')
+  })
+})
+
+
 describe('Groups.vue — copyUrl()', () => {
   beforeEach(() => {
     Object.assign(navigator, { clipboard: { writeText: jest.fn() } })
@@ -261,5 +319,31 @@ describe('Groups.vue — copyUrl()', () => {
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
       expect.stringContaining('/groups?join=A1B2C3D4')
     )
+  })
+})
+
+
+describe('Groups.vue — shareUrl()', () => {
+  beforeEach(() => {
+    Object.assign(navigator, { clipboard: { writeText: jest.fn() } })
+  })
+
+  test('calls navigator.share with title, text, and URL when supported', async () => {
+    navigator.share = jest.fn().mockResolvedValue()
+    const wrapper = createWrapper()
+    await wrapper.vm.shareUrl('A1B2C3D4')
+    expect(navigator.share).toHaveBeenCalledWith({
+      title: 'Join wishXlist',
+      text:  expect.stringContaining('wishXlist'),
+      url:   expect.stringContaining('/groups?join=A1B2C3D4'),
+    })
+  })
+
+  test('falls back to copyUrl when navigator.share is not supported', async () => {
+    delete navigator.share
+    const wrapper = createWrapper()
+    const copySpy = jest.spyOn(wrapper.vm, 'copyUrl').mockResolvedValue()
+    await wrapper.vm.shareUrl('A1B2C3D4')
+    expect(copySpy).toHaveBeenCalledWith('A1B2C3D4')
   })
 })

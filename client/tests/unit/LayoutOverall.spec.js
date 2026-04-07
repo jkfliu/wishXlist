@@ -7,24 +7,26 @@ function createWrapper(store) {
 }
 
 describe('LayoutOverall.vue — nav toggle', () => {
-  test('renders nav slot when navVisible is true', () => {
+  test('renders nav when navVisible is true', () => {
     const store = createStore('testuser', true, true)
     const wrapper = createWrapper(store)
     expect(wrapper.find('nav').exists()).toBe(true)
+    expect(wrapper.find('nav').classes()).not.toContain('nav-collapsed')
   })
 
-  test('hides nav when navVisible is false', () => {
+  test('nav has nav-collapsed class when navVisible is false', () => {
     const store = createStore('testuser', true, false)
     const wrapper = createWrapper(store)
-    expect(wrapper.find('nav').exists()).toBe(false)
+    expect(wrapper.find('nav').exists()).toBe(true)
+    expect(wrapper.find('nav').classes()).toContain('nav-collapsed')
   })
 
-  test('nav visibility reacts when store state changes', async () => {
+  test('nav-collapsed class reacts when store state changes', async () => {
     const store = createStore('testuser', true, true)
     const wrapper = createWrapper(store)
-    expect(wrapper.find('nav').exists()).toBe(true)
+    expect(wrapper.find('nav').classes()).not.toContain('nav-collapsed')
     store.commit('toggle_nav_visible')
     await wrapper.vm.$nextTick()
-    expect(wrapper.find('nav').exists()).toBe(false)
+    expect(wrapper.find('nav').classes()).toContain('nav-collapsed')
   })
 })

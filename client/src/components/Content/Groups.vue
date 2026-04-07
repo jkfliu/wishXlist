@@ -44,6 +44,9 @@
                   </button>
                   <span v-if="copiedFor === group.inviteCode" class="copied-tooltip">Copied!</span>
                 </span>
+                <button class="icon-btn" @click="shareUrl(group.inviteCode)" title="Share invite link">
+                  <i class="fas fa-share-alt"></i>
+                </button>
               </div>
               <span v-else>—</span>
             </td>
@@ -61,6 +64,7 @@
             <td v-else>—</td>
             <td>
               <button @click="leaveGroup(group._id)">Leave</button>
+              <button v-if="group.inviteCode !== 'PUBLIC' && isAdmin(group)" class="delete-btn" @click="deleteGroup(group._id)">Delete</button>
             </td>
           </tr>
         </tbody>
@@ -168,6 +172,16 @@
         return `${window.location.origin}/groups?join=${inviteCode}`
       },
 
+      async shareUrl(inviteCode) {
+        const url  = this.inviteUrl(inviteCode)
+        const text = `You're invited to join my wishlist group on wishXlist. Start sharing your wish lists!`
+        if (navigator.share) {
+          await navigator.share({ title: 'Join wishXlist', text, url })
+        } else {
+          await this.copyUrl(inviteCode)
+        }
+      },
+
       async copyUrl(inviteCode) {
         try {
           await navigator.clipboard.writeText(this.inviteUrl(inviteCode))
@@ -176,6 +190,27 @@
           this.copiedTimer = setTimeout(() => { this.copiedFor = null }, 1500)
         } catch (err) {
           console.error('Copy failed:', err)
+        }
+      },
+
+      isAdmin(group) {
+        return group.admins && group.admins.includes(this.$store.state.vuex_globalUser)
+      },
+
+      async deleteGroup(groupId) {
+        if (!confirm('Are you sure you want to delete this group? This cannot be undone.')) return
+        try {
+          const response = await fetch('/Groups/Delete', {
+            method:      'POST',
+            credentials: 'include',
+            headers:     { 'Content-type': 'application/json; charset=UTF-8' },
+            body:        JSON.stringify({ groupId }),
+          })
+          if (!response.ok) throw new Error(`Server error: ${response.status}`)
+          await this.$store.dispatch('fetchGroups')
+        } catch (error) {
+          console.error(error)
+          alert('deleteGroup(): Unable to delete group. Please contact Support')
         }
       },
 
