@@ -47,9 +47,9 @@
               </div>
             </td>
             <td v-else>—</td>
-            <td class="actions-cell">
+            <td>
               <button @click="leaveGroup(group._id)">Leave</button>
-              <button v-if="group.inviteCode !== 'PUBLIC' && isAdmin(group)" class="delete-btn" @click="deleteGroup(group._id)">Delete</button>
+              <button v-if="group.inviteCode !== 'PUBLIC' && isAdmin(group)" class="delete-btn" style="margin-left: 6px" @click="deleteGroup(group._id)">Delete</button>
             </td>
           </tr>
         </tbody>
@@ -269,11 +269,6 @@
     margin-bottom: 0;
   }
 
-  .actions-cell {
-    display:    flex;
-    gap:        6px;
-    align-items: center;
-  }
 
   th, td {
     text-align: left;
