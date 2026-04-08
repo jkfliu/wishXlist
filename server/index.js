@@ -27,9 +27,9 @@ app.use(cors({ origin: corsOrigins, credentials: true }));
 // Routes
 // GET  /WishList/                        - Select all (or filtered by ?groupId=)
 // GET  /WishList/:user                   - Select wishlist for specific user
-// POST /WishList/Create                  - Create new wishlist item
-// POST /WishList/Update                  - Update wishlist item
-// POST /WishList/Delete/:_id             - Delete wishlist item
+// POST   /WishList                        - Create new wishlist item
+// PUT    /WishList/:_id                   - Update wishlist item
+// DELETE /WishList/:_id                   - Delete wishlist item
 // GET  /Auth/OAuth/google                - Initiate Google OAuth
 // GET  /Auth/OAuth/google/callback       - OAuth callback (server-side redirect)
 // GET  /Auth/OAuth/facebook              - Initiate Facebook OAuth
@@ -42,8 +42,9 @@ app.use(cors({ origin: corsOrigins, credentials: true }));
 // POST /Groups/Leave                     - Leave a group
 // POST /Groups/Delete                    - Delete a group (Group Admin only); cascades visibleToGroups cleanup
 // GET  /Groups/Members                   - Return members of a group (requester must be a member)
-app.options('/WishList/:user',       cors());
-app.options('/WishList/Delete/:_id', cors());
+app.options('/WishList',      cors());
+app.options('/WishList/:_id', cors());
+app.options('/WishList/:user', cors());
 app.options('/Groups/Create',        cors());
 app.options('/Groups/Join',          cors());
 app.options('/Groups/Leave',         cors());
@@ -224,7 +225,7 @@ app.get('/WishList/:user', async (req, res) => {
 });
 
 // Route for creating a new Wish List item
-app.post('/WishList/Create', async (req, res) => {
+app.post('/WishList', async (req, res) => {
   if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
   try {
     const data = await wishListModel.create(req.body);
@@ -237,15 +238,15 @@ app.post('/WishList/Create', async (req, res) => {
 
 // Route for updating a Wish List item
 // Owner may edit all fields; non-owner may only claim gifter_user_name on an ungifted item
-app.post('/WishList/Update', async (req, res) => {
+app.put('/WishList/:_id', async (req, res) => {
   if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
   try {
-    const item = await wishListModel.findById(req.body._id);
+    const item = await wishListModel.findById(req.params._id);
     if (!item) return res.status(404).json({ error: 'Item not found' });
     const isOwner  = item.user_name === req.user.username;
     const isGifter = !item.gifter_user_name && req.body.gifter_user_name === req.user.username;
     if (!isOwner && !isGifter) return res.status(403).json({ error: 'Forbidden' });
-    const data = await wishListModel.findByIdAndUpdate(req.body._id, {
+    const data = await wishListModel.findByIdAndUpdate(req.params._id, {
       item_name:          req.body.item_name,
       model:              req.body.model,
       price:              req.body.price,
@@ -263,7 +264,7 @@ app.post('/WishList/Update', async (req, res) => {
 });
 
 // Route for deleting an existing Wish List item
-app.post('/WishList/Delete/:_id', async (req, res) => {
+app.delete('/WishList/:_id', async (req, res) => {
   if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
   try {
     const item = await wishListModel.findById(req.params._id);

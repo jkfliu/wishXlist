@@ -5,7 +5,7 @@
     <div class="error-message" v-if="error_message">{{ error_message }}</div>
     <p><i>Please login to view Wish Lists or your Groups</i></p>
     <a href="/Auth/OAuth/google" class="oauth-btn google-btn">Sign in with Google</a>
-    <a href="/Auth/OAuth/facebook" class="oauth-btn facebook-btn">Continue with Facebook</a>
+    <br><a href="/Auth/OAuth/facebook" class="oauth-btn facebook-btn">Continue with Facebook</a>
   </div>
 </template>
 

@@ -41,24 +41,24 @@ const router = new Router({
   ]
 })
 
-router.beforeEach((to, from, next) => {
+const SESSION_TTL_MS = 2 * 60 * 1000  // re-validate server session every 2 minutes
 
-  /*
-  console.log('router.js: beforeEach: to, from paths:         ' + 'to:' + to.path + ' from:' + from.path)
-  console.log('router.js: beforeEach: to.meta.allowAnonymous: ' + to.meta.allowAnonymous)
-  console.log('router.js: beforeEach: vuex_isAuthenticated:   ' + store.state.vuex_isAuthenticated)
-  console.log("router.js: vuex: vuex_globalUser " + store.state.vuex_globalUser + ', vuex_isAuthenticated ' + store.state.vuex_isAuthenticated)
-  */
+router.beforeEach(async (to, from, next) => {
+  if (to.meta.allowAnonymous) {
+    return next()
+  }
 
-  if (!to.meta.allowAnonymous && !store.state.vuex_isAuthenticated) {
-    next({
-      path:   '/login',
-      query: { redirect: to.fullPath }
-    })
+  // Re-validate the server session if it's been more than 2 minutes since the last check
+  const stale = Date.now() - store.state.sessionValidatedAt > SESSION_TTL_MS
+  if (stale) {
+    await store.dispatch('fetchCurrentUser')
+  }
+
+  if (!store.state.vuex_isAuthenticated) {
+    next({ path: '/login', query: { redirect: to.fullPath } })
   } else {
     next()
   }
-  
 })
 
 export default router

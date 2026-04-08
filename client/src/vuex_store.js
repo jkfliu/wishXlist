@@ -13,6 +13,9 @@ const store = new Vuex.Store({
     groups:               [],
     groupsLoaded:         false,
     groupsError:          false,
+    sessionValidatedAt:   0,
+    wishListCache:        {},   // { [username]: items[] }
+    groupWishListCache:   {},   // { [groupId]:  { items: [], fetchedAt: timestamp } }
   },
 
   mutations: {
@@ -44,6 +47,18 @@ const store = new Vuex.Store({
     set_groups_error(state, error) {
       state.groupsError = error
     },
+    set_session_validated_at(state, ts) {
+      state.sessionValidatedAt = ts
+    },
+    set_wish_list_cache(state, { username, items }) {
+      state.wishListCache = { ...state.wishListCache, [username]: items }
+    },
+    set_group_wish_list_cache(state, { groupId, items }) {
+      state.groupWishListCache = {
+        ...state.groupWishListCache,
+        [groupId]: { items, fetchedAt: Date.now() },
+      }
+    },
   },
 
   actions: {
@@ -55,6 +70,7 @@ const store = new Vuex.Store({
           commit('set_vuex_globalUser', data.username);
           commit('set_vuex_displayName', data.displayName || '');
           commit('set_vuex_isAuthenticated', true);
+          commit('set_session_validated_at', Date.now());
           await dispatch('fetchGroups');
         } else {
           commit('set_vuex_globalUser', '');

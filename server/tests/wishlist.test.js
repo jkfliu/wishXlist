@@ -48,18 +48,18 @@ describe('WishList endpoints — unauthenticated requests return 401', () => {
     expect(res.status).toBe(401);
   });
 
-  test('POST /WishList/Create returns 401 when not logged in', async () => {
-    const res = await request(app).post('/WishList/Create').send({ user_name: 'testuser', item_name: 'Item' });
+  test('POST /WishList returns 401 when not logged in', async () => {
+    const res = await request(app).post('/WishList').send({ user_name: 'testuser', item_name: 'Item' });
     expect(res.status).toBe(401);
   });
 
-  test('POST /WishList/Update returns 401 when not logged in', async () => {
-    const res = await request(app).post('/WishList/Update').send({ _id: 'someid', item_name: 'Item' });
+  test('PUT /WishList/:id returns 401 when not logged in', async () => {
+    const res = await request(app).put('/WishList/someid').send({ item_name: 'Item' });
     expect(res.status).toBe(401);
   });
 
-  test('POST /WishList/Delete/:id returns 401 when not logged in', async () => {
-    const res = await request(app).post('/WishList/Delete/someid');
+  test('DELETE /WishList/:id returns 401 when not logged in', async () => {
+    const res = await request(app).delete('/WishList/someid');
     expect(res.status).toBe(401);
   });
 });
@@ -167,7 +167,7 @@ describe('GET /WishList?groupId= — server-side group filtering', () => {
   });
 });
 
-describe('POST /WishList/Create', () => {
+describe('POST /WishList', () => {
   test('creates an item and returns it when authenticated', async () => {
     const agent = request.agent(app);
     await agent.post('/Auth/Test/FakeLogin').send({ username: 'testuser@example.com' });
@@ -178,7 +178,7 @@ describe('POST /WishList/Create', () => {
       price: '99.99',
       store: 'Test Store',
     };
-    const res = await agent.post('/WishList/Create').send(newItem);
+    const res = await agent.post('/WishList').send(newItem);
     expect([200, 201]).toContain(res.status);
     expect(res.body).toHaveProperty('_id');
     expect(res.body).toHaveProperty('item_name', 'Test Item');
@@ -188,7 +188,7 @@ describe('POST /WishList/Create', () => {
   test('persists visibleToGroups when provided', async () => {
     const agent = request.agent(app);
     await agent.post('/Auth/Test/FakeLogin').send({ username: 'testuser@example.com' });
-    const res = await agent.post('/WishList/Create')
+    const res = await agent.post('/WishList')
       .send({ user_name: 'testuser@example.com', item_name: 'Group Item', visibleToGroups: ['g1', 'g2'] });
     expect(res.status).toBe(200);
     expect(res.body.visibleToGroups).toEqual(['g1', 'g2']);
@@ -197,7 +197,7 @@ describe('POST /WishList/Create', () => {
   test('visibleToGroups defaults to empty array when not provided', async () => {
     const agent = request.agent(app);
     await agent.post('/Auth/Test/FakeLogin').send({ username: 'testuser@example.com' });
-    const res = await agent.post('/WishList/Create')
+    const res = await agent.post('/WishList')
       .send({ user_name: 'testuser@example.com', item_name: 'No Groups Item' });
     expect(res.status).toBe(200);
     expect(res.body.visibleToGroups).toEqual([]);
@@ -217,13 +217,12 @@ describe('GET /WishList/:user', () => {
   });
 });
 
-describe('POST /WishList/Update', () => {
+describe('PUT /WishList/:id', () => {
   test('updates an existing item when owner is authenticated', async () => {
     expect(createdItemId).toBeDefined();
     const agent = request.agent(app);
     await agent.post('/Auth/Test/FakeLogin').send({ username: 'testuser@example.com' });
-    const res = await agent.post('/WishList/Update').send({
-      _id: createdItemId,
+    const res = await agent.put(`/WishList/${createdItemId}`).send({
       item_name: 'Updated Item',
       model: 'Model Y',
       price: '149.99',
@@ -240,8 +239,7 @@ describe('POST /WishList/Update', () => {
     expect(createdItemId).toBeDefined();
     const agent = request.agent(app);
     await agent.post('/Auth/Test/FakeLogin').send({ username: 'otheruser@example.com' });
-    const res = await agent.post('/WishList/Update').send({
-      _id: createdItemId,
+    const res = await agent.put(`/WishList/${createdItemId}`).send({
       item_name: 'Hacked Item',
       model: '',
       price: '',
@@ -257,8 +255,7 @@ describe('POST /WishList/Update', () => {
     expect(createdItemId).toBeDefined();
     const agent = request.agent(app);
     await agent.post('/Auth/Test/FakeLogin').send({ username: 'testuser@example.com' });
-    const res = await agent.post('/WishList/Update').send({
-      _id: createdItemId,
+    const res = await agent.put(`/WishList/${createdItemId}`).send({
       item_name: 'Updated Item',
       model: '', price: '', store: '',
       item_modified_date: new Date().toISOString(),
@@ -268,14 +265,27 @@ describe('POST /WishList/Update', () => {
     expect(res.status).toBe(200);
     expect(res.body.visibleToGroups).toEqual(['g3']);
   });
+
+  test('returns 500 for invalid _id format', async () => {
+    const agent = request.agent(app);
+    await agent.post('/Auth/Test/FakeLogin').send({ username: 'testuser@example.com' });
+    const res = await agent.put('/WishList/not-a-valid-id').send({
+      item_name: 'Test',
+      model: '', price: '', store: '',
+      item_modified_date: new Date().toISOString(),
+      gifter_user_name: '', gifted_date: null,
+    });
+    expect(res.status).toBe(500);
+    expect(res.body).toHaveProperty('error');
+  });
 });
 
-describe('POST /WishList/Delete/:id', () => {
+describe('DELETE /WishList/:id', () => {
   test('returns 403 when a different user tries to delete the item', async () => {
     expect(createdItemId).toBeDefined();
     const agent = request.agent(app);
     await agent.post('/Auth/Test/FakeLogin').send({ username: 'otheruser@example.com' });
-    const res = await agent.post(`/WishList/Delete/${createdItemId}`);
+    const res = await agent.delete(`/WishList/${createdItemId}`);
     expect(res.status).toBe(403);
   });
 
@@ -283,7 +293,7 @@ describe('POST /WishList/Delete/:id', () => {
     expect(createdItemId).toBeDefined();
     const agent = request.agent(app);
     await agent.post('/Auth/Test/FakeLogin').send({ username: 'testuser@example.com' });
-    const res = await agent.post(`/WishList/Delete/${createdItemId}`);
+    const res = await agent.delete(`/WishList/${createdItemId}`);
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('_id', createdItemId);
   });
@@ -291,23 +301,7 @@ describe('POST /WishList/Delete/:id', () => {
   test('returns 500 for invalid _id format', async () => {
     const agent = request.agent(app);
     await agent.post('/Auth/Test/FakeLogin').send({ username: 'testuser@example.com' });
-    const res = await agent.post('/WishList/Delete/not-a-valid-id');
-    expect(res.status).toBe(500);
-    expect(res.body).toHaveProperty('error');
-  });
-});
-
-describe('POST /WishList/Update - error handling', () => {
-  test('returns 500 for invalid _id format', async () => {
-    const agent = request.agent(app);
-    await agent.post('/Auth/Test/FakeLogin').send({ username: 'testuser@example.com' });
-    const res = await agent.post('/WishList/Update').send({
-      _id: 'not-a-valid-id',
-      item_name: 'Test',
-      model: '', price: '', store: '',
-      item_modified_date: new Date().toISOString(),
-      gifter_user_name: '', gifted_date: null,
-    });
+    const res = await agent.delete('/WishList/not-a-valid-id');
     expect(res.status).toBe(500);
     expect(res.body).toHaveProperty('error');
   });

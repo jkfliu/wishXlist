@@ -139,12 +139,74 @@ describe('GroupWishLists.vue — loadWishListForGroup() via group change', () =>
 })
 
 
+describe('GroupWishLists.vue — Vuex group wish list cache', () => {
+  const GROUP_WISH_LIST_TTL_MS = 2 * 60 * 1000
+
+  test('stores fetched items in groupWishListCache on mount', async () => {
+    const store = createStore('me@example.com', true, true, sampleGroups)
+    global.fetch = jest.fn().mockResolvedValueOnce({ ok: true, json: async () => sampleItems })
+    shallowMount(GroupWishLists, { localVue, store })
+    await new Promise(r => setTimeout(r, 0))
+    expect(store.state.groupWishListCache['g1'].items).toHaveLength(2)
+  })
+
+  test('uses cached items when cache is fresh (no fetch)', async () => {
+    const store = createStore('me@example.com', true, true, sampleGroups)
+    store.commit('set_group_wish_list_cache', { groupId: 'g1', items: sampleItems })
+    global.fetch = jest.fn()
+    const wrapper = shallowMount(GroupWishLists, { localVue, store })
+    await new Promise(r => setTimeout(r, 0))
+    expect(global.fetch).not.toHaveBeenCalled()
+    expect(wrapper.vm.wish_list_array).toHaveLength(2)
+  })
+
+  test('re-fetches when cache is stale (older than 2 minutes)', async () => {
+    const store = createStore('me@example.com', true, true, sampleGroups)
+    store.commit('set_group_wish_list_cache', { groupId: 'g1', items: sampleItems })
+    // manually backdate the fetchedAt timestamp
+    store.state.groupWishListCache['g1'].fetchedAt = Date.now() - GROUP_WISH_LIST_TTL_MS - 1
+    global.fetch = jest.fn().mockResolvedValueOnce({ ok: true, json: async () => sampleItems })
+    shallowMount(GroupWishLists, { localVue, store })
+    await new Promise(r => setTimeout(r, 0))
+    expect(global.fetch).toHaveBeenCalledTimes(1)
+    expect(global.fetch.mock.calls[0][0]).toContain('/WishList?groupId=g1')
+  })
+
+  test('updates cache after giftWishItem', async () => {
+    const store = createStore('me@example.com', true, true, [sampleGroups[0]])
+    store.commit('set_group_wish_list_cache', { groupId: 'g1', items: [sampleItems[0]] })
+    const gifted = { ...sampleItems[0], gifter_user_name: 'me@example.com' }
+    global.fetch = jest.fn().mockResolvedValueOnce({ ok: true, json: async () => gifted })
+    const wrapper = shallowMount(GroupWishLists, { localVue, store })
+    await new Promise(r => setTimeout(r, 0))
+
+    await wrapper.vm.giftWishItem(gifted)
+    expect(store.state.groupWishListCache['g1'].items[0].gifter_user_name).toBe('me@example.com')
+  })
+
+  test('re-fetches for new groupId when switching groups (no cache for that group)', async () => {
+    const store = createStore('me@example.com', true, true, sampleGroups)
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => sampleItems })       // initial g1
+      .mockResolvedValueOnce({ ok: true, json: async () => [sampleItems[1]] })  // g2 (no cache)
+    const wrapper = shallowMount(GroupWishLists, { localVue, store })
+    await new Promise(r => setTimeout(r, 0))
+
+    global.fetch.mockClear()
+    wrapper.vm.selectedGroupId = 'g2'
+    await wrapper.vm.loadWishListForGroup()
+    expect(global.fetch).toHaveBeenCalledTimes(1)
+    expect(global.fetch.mock.calls[0][0]).toContain('/WishList?groupId=g2')
+  })
+})
+
+
 describe('GroupWishLists.vue — giftWishItem()', () => {
-  test('POSTs to /WishList/Update and updates local array', async () => {
+  test('PUTs to /WishList/:id and updates local array', async () => {
     const gifted = { ...sampleItems[0], gifter_user_name: 'me@example.com' }
     global.fetch = jest.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => [sampleItems[0]] })  // /WishList?groupId=
-      .mockResolvedValueOnce({ ok: true, json: async () => gifted })             // /WishList/Update
+      .mockResolvedValueOnce({ ok: true, json: async () => gifted })             // PUT /WishList/:id
 
     const wrapper = createWrapper([sampleGroups[0]])
     await new Promise(r => setTimeout(r, 0))
@@ -152,8 +214,8 @@ describe('GroupWishLists.vue — giftWishItem()', () => {
     await wrapper.vm.giftWishItem(gifted)
 
     expect(global.fetch).toHaveBeenCalledWith(
-      '/WishList/Update',
-      expect.objectContaining({ method: 'POST' })
+      `/WishList/${sampleItems[0]._id}`,
+      expect.objectContaining({ method: 'PUT' })
     )
     expect(wrapper.vm.wish_list_array[0].gifter_user_name).toBe('me@example.com')
   })

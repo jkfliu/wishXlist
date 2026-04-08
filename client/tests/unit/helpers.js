@@ -14,6 +14,9 @@ export function createStore(username = 'testuser', isAuthenticated = true, navVi
       groups,
       groupsLoaded:         groups.length > 0,
       groupsError:          false,
+      sessionValidatedAt:   0,
+      wishListCache:        {},
+      groupWishListCache:   {},
     },
     mutations: {
       set_vuex_globalUser(state, user) { state.vuex_globalUser = user },
@@ -23,6 +26,16 @@ export function createStore(username = 'testuser', isAuthenticated = true, navVi
       set_groups(state, g) { state.groups = g },
       set_groups_loaded(state, v) { state.groupsLoaded = v },
       set_groups_error(state, v) { state.groupsError = v },
+      set_session_validated_at(state, ts) { state.sessionValidatedAt = ts },
+      set_wish_list_cache(state, { username, items }) {
+        state.wishListCache = { ...state.wishListCache, [username]: items }
+      },
+      set_group_wish_list_cache(state, { groupId, items }) {
+        state.groupWishListCache = {
+          ...state.groupWishListCache,
+          [groupId]: { items, fetchedAt: Date.now() },
+        }
+      },
     },
     actions: {
       fetchCurrentUser: jest.fn(),

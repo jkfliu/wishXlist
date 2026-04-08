@@ -58,11 +58,19 @@
     methods: {
       async loadWishListForGroup() {
         if (!this.selectedGroupId) return
+        const cached = this.$store.state.groupWishListCache[this.selectedGroupId]
+        const fresh  = cached && (Date.now() - cached.fetchedAt < 2 * 60 * 1000)
+        if (fresh) {
+          this.wish_list_array = cached.items
+          this.loading = false
+          return
+        }
         this.loading = true
         try {
           const res = await fetch(`/WishList?groupId=${this.selectedGroupId}`, { credentials: 'include' })
           if (!res.ok) throw new Error(`Server error: ${res.status}`)
           this.wish_list_array = await res.json()
+          this.$store.commit('set_group_wish_list_cache', { groupId: this.selectedGroupId, items: this.wish_list_array })
         } catch (error) {
           console.error(error)
           alert('loadWishListForGroup(): Unable to retrieve Wish List items. Please contact Support')
@@ -74,8 +82,8 @@
       async giftWishItem(updated_wish_item) {
         if (confirm('Are you sure you want to gift this item?\n(This action cannot be undone)')) {
           try {
-            const response = await fetch('/WishList/Update', {
-              method:    'POST',
+            const response = await fetch(`/WishList/${updated_wish_item._id}`, {
+              method:    'PUT',
               body:       JSON.stringify(updated_wish_item),
               headers: { 'Content-type': 'application/json; charset=UTF-8' },
             })
@@ -84,6 +92,7 @@
             this.wish_list_array = this.wish_list_array.map(
               wish_item => wish_item._id === updated_wish_item._id ? updated_wish_item : wish_item
             )
+            this.$store.commit('set_group_wish_list_cache', { groupId: this.selectedGroupId, items: this.wish_list_array })
           } catch (error) {
             console.error(error)
             alert("giftWishItem(): Unable to gift this Wish List item. Please contact Support")
