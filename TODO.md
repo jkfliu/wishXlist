@@ -10,6 +10,7 @@
 - [ ] Group Admin: ability to add/change Group Admins (currently creator is permanent admin)
 - [ ] Group Admin: allow Admin to remove members from Groups
 - [ ] Group Admin: group administration — e.g. modify Group Name
+- [ ] Check behavior / error trapping when joining a legacy or non-existent group (e.g. stale invite code)
 - [x] Data migration: populate admins field for legacy groups created before Group Admin feature (admins: [] currently)
 - [x] Auto-delete group when last member leaves; warn user if they are the sole member
 - [x] Create option to share invite link with custom 'Welcome to wishXlist' text — Web Share API with clipboard fallback
@@ -45,6 +46,9 @@
 - [x] Sort Wish List by column headings (e.g. Price)
 - [x] Optimise for mobile viewing
 - [x] (Scalability) Deduplicate GET /Groups fetches — groups cached in Vuex, fetched once on login/app load
+
+## Ops
+- [ ] Weekly report with 3 sections: Stats (# Users, # Groups, # Wishes, # Gifted — this week vs last week), Logins (# unique users, # logins, # page visits), Metrics (# HTTP errors, avg response time)
 
 ## Tech Debt
 - [ ] Consider migrating to React framework when the app scales
