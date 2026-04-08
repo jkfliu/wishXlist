@@ -28,16 +28,16 @@
 - [x] OAuth callback leaks email in URL (?oauth_username=) — replaced with ?oauth_success=1; client calls /Auth/Me to get identity from session
 
 ## API & Data Model
-- [ ] Change POST /WishList/Delete to DELETE method
-- [ ] Standardise route naming — remove verb-based paths (/WishList/Create → POST /WishList)
 - [ ] (Scalability) Add pagination to GET /WishList (full collection scan — will degrade at scale)
+- [x] Change POST /WishList/Delete to DELETE method
+- [x] Standardise route naming — remove verb-based paths (/WishList/Create → POST /WishList)
 - [x] Handle stale visibleToGroups group IDs when a group is deleted — cascade $pull on delete via POST /Groups/Delete
 - [x] Add database indexes on user_name, visibleToGroups, group membership fields
 - [x] Fix price field from String to Number in WishListItem schema
 
 ## Frontend
-- [ ] Re-validate server session on route change (router currently trusts localStorage auth state)
-- [ ] Cache wish list items (GET /WishList) and group members (GET /Groups/Members?groupId=) in Vuex
+- [x] Re-validate server session on route change (router re-validates via /Auth/Me every 2 min)
+- [x] Cache wish list items (GET /WishList) and group members (GET /Groups/Members?groupId=) in Vuex
 - [x] When left menu is minimised, show icons instead of hiding it completely — icons shown, labels hidden; collapse toggle at bottom of sidebar
 - [x] When logged out, no icon shown on login page; login icon (fa-user-circle) shown on other pages
 - [x] Ability to hide/toggle the left-hand side navigation menu
