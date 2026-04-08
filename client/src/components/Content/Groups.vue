@@ -160,7 +160,12 @@
       },
 
       async leaveGroup(groupId) {
-        if (!confirm('Are you sure you want to leave this group?')) return
+        const group    = this.groups.find(g => g._id === groupId)
+        const isSole   = group && group.members.length === 1
+        const message  = isSole
+          ? 'You are the only member. Leaving will permanently delete this group. Are you sure?'
+          : 'Are you sure you want to leave this group?'
+        if (!confirm(message)) return
         try {
           const response = await fetch('/Groups/Leave', {
             method:      'POST',

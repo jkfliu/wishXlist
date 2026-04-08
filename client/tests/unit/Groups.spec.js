@@ -271,6 +271,26 @@ describe('Groups.vue — leaveGroup()', () => {
     await wrapper.vm.leaveGroup('g2')
     expect(dispatchSpy).toHaveBeenCalledWith('fetchGroups')
   })
+
+  test('shows deletion warning when user is the sole member', async () => {
+    const soloGroup = [{ _id: 'g3', name: 'Solo', inviteCode: 'SOLO1', members: ['me@example.com'], admins: ['me@example.com'] }]
+    const store = createStore('me@example.com', true, true, soloGroup)
+    global.fetch = jest.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ deleted: true }) })
+    shallowMount(Groups, { localVue, store, mocks: { $route: { query: {} } } })
+    // Trigger leaveGroup via the component instance
+    const wrapper = shallowMount(Groups, { localVue, store, mocks: { $route: { query: {} } } })
+    await wrapper.vm.leaveGroup('g3')
+    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('permanently delete'))
+  })
+
+  test('shows standard warning when group has multiple members', async () => {
+    const multiGroup = [{ _id: 'g4', name: 'Multi', inviteCode: 'MULTI1', members: ['me@example.com', 'other@example.com'], admins: ['me@example.com'] }]
+    const store = createStore('me@example.com', true, true, multiGroup)
+    global.fetch = jest.fn().mockResolvedValueOnce({ ok: true, json: async () => ({}) })
+    const wrapper = shallowMount(Groups, { localVue, store, mocks: { $route: { query: {} } } })
+    await wrapper.vm.leaveGroup('g4')
+    expect(window.confirm).toHaveBeenCalledWith('Are you sure you want to leave this group?')
+  })
 })
 
 

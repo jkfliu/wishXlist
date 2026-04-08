@@ -330,7 +330,7 @@ app.post('/Groups/Join', async (req, res) => {
   }
 });
 
-// Leave a group
+// Leave a group; auto-deletes the group (with visibleToGroups cascade) if the last member leaves
 app.post('/Groups/Leave', async (req, res) => {
   if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
   try {
@@ -340,6 +340,16 @@ app.post('/Groups/Leave', async (req, res) => {
       { new: true }
     );
     if (!data) return res.status(404).json({ error: 'Group not found' });
+    if (data.members.length === 0) {
+      await Promise.all([
+        groupModel.findByIdAndDelete(req.body.groupId),
+        wishListModel.updateMany(
+          { visibleToGroups: req.body.groupId },
+          { $pull: { visibleToGroups: req.body.groupId } }
+        ),
+      ]);
+      return res.json({ deleted: true });
+    }
     return res.json(data);
   } catch (err) {
     console.error(err);

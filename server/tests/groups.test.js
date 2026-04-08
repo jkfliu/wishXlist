@@ -195,6 +195,20 @@ describe('POST /Groups/Leave', () => {
     const res = await agent.post('/Groups/Leave').send({ groupId: '000000000000000000000000' });
     expect(res.status).toBe(404);
   });
+
+  test('auto-deletes group when last member leaves', async () => {
+    const solo = await GroupModel.create({
+      name: 'Solo Group', inviteCode: 'SOLOGRP1',
+      members: ['grouptest@example.com'], admins: ['grouptest@example.com'],
+    });
+    const agent = request.agent(app);
+    await agent.post('/Auth/Test/FakeLogin').send({ username: 'grouptest@example.com' });
+    const res = await agent.post('/Groups/Leave').send({ groupId: solo._id.toString() });
+    expect(res.status).toBe(200);
+    expect(res.body.deleted).toBe(true);
+    const gone = await GroupModel.findById(solo._id);
+    expect(gone).toBeNull();
+  });
 });
 
 
