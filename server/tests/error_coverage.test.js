@@ -60,6 +60,7 @@ describe('Groups routes - DB error', () => {
     ['POST', '/Groups/Create',                  'create',            { name: 'Fail Group' }],
     ['POST', '/Groups/Join',                    'findOneAndUpdate',  { inviteCode: 'X' }],
     ['POST', '/Groups/Leave',                   'findByIdAndUpdate', { groupId: 'abc' }],
+    ['POST', '/Groups/Delete',                  'findById',          { groupId: 'abc' }],
     ['GET',  '/Groups/Members?groupId=abc123',  'findById',          null],
   ])('%s %s returns 500 on DB failure', async (method, url, modelMethod, body) => {
     jest.spyOn(groupModel, modelMethod).mockRejectedValueOnce(new Error('DB down'));
