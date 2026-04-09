@@ -150,12 +150,16 @@
             headers:     { 'Content-type': 'application/json; charset=UTF-8' },
             body:        JSON.stringify({ inviteCode: code }),
           })
+          if (response.status === 404) {
+            alert('Invite code not found. It may have expired or been deleted.')
+            return
+          }
           if (!response.ok) throw new Error(`Server error: ${response.status}`)
           if (code === this.joinCode) this.joinCode = ''
           await this.$store.dispatch('fetchGroups')
         } catch (error) {
           console.error(error)
-          alert('joinGroup(): Unable to join group. Please contact Support')
+          alert('Unable to join group. Please try again later.')
         }
       },
 

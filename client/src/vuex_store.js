@@ -4,6 +4,11 @@ import Vuex from 'vuex'
 
 Vue.use(Vuex)
 
+// On first visit (no stored preference), collapse nav on mobile
+if (localStorage.getItem('navVisible') === null) {
+  localStorage.setItem('navVisible', String(window.innerWidth > 600))
+}
+
 const store = new Vuex.Store({
   state: {
     vuex_globalUser:      localStorage.getItem('vuex_globalUser')      || '',

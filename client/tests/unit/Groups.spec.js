@@ -237,6 +237,17 @@ describe('Groups.vue — joinGroup()', () => {
     await wrapper.vm.joinGroup('PUBLIC')
     expect(wrapper.vm.joinCode).toBe('something')
   })
+
+  test('shows invite-not-found message on 404 and does not dispatch fetchGroups', async () => {
+    global.fetch = jest.fn().mockResolvedValueOnce({ ok: false, status: 404 })
+    const store = createStore('me@example.com', true, true, sampleGroups)
+    const dispatchSpy = jest.spyOn(store, 'dispatch')
+    const wrapper = shallowMount(Groups, { localVue, store, mocks: { $route: { query: {} } } })
+    wrapper.vm.joinCode = 'BADCODE'
+    await wrapper.vm.joinGroup()
+    expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('Invite code not found'))
+    expect(dispatchSpy).not.toHaveBeenCalledWith('fetchGroups')
+  })
 })
 
 
