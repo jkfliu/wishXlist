@@ -87,6 +87,9 @@ const securityUserModel = db_connection.model('UserList', userSchema, 'UserList'
 const groupSchema = require('./schema/Group_schema');
 const groupModel  = db_connection.model('Groups', groupSchema, 'Groups');
 
+const eventLogSchema = require('./schema/EventLog_schema');
+const eventLogModel  = db_connection.model('EventLog', eventLogSchema, 'EventLog');
+
 db_connection.on('open',  async () => {
   console.log('Connected to mongoDB wishXlist successfully!');
   // Ensure the public group exists
@@ -173,6 +176,28 @@ passport.deserializeUser(async (id, done) => {
   } catch (err) {
     done(err);
   }
+});
+
+
+/*********************/
+/* REQUEST LOGGING   */
+/*********************/
+
+// Log page views, API calls, and HTTP errors to EventLog collection
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    if (/\.(js|css|png|ico|map|woff|woff2|ttf|svg)$/.test(req.path)) return;
+    const isApi = /^\/(Auth|WishList|Groups|Admin)/.test(req.path);
+    eventLogModel.create({
+      type:      isApi ? 'api' : 'pageview',
+      username:  req.user?.username || null,
+      path:      req.path,
+      status:    res.statusCode,
+      duration:  Date.now() - start,
+    }).catch(() => {});
+  });
+  next();
 });
 
 
@@ -393,6 +418,186 @@ app.get('/Groups/Members', async (req, res) => {
 });
 
 
+/********************/
+/* ROUTES - ADMIN   */
+/********************/
+
+// Build ISO week label e.g. "2026-W15"
+function isoWeekLabel(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const week = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+}
+
+// Build array of last N week-start Date objects (Monday 00:00 UTC)
+function lastNWeekStarts(n) {
+  const weeks = [];
+  const now = new Date();
+  // Start of current ISO week (Monday)
+  const day = now.getUTCDay() || 7;
+  const thisMonday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - (day - 1)));
+  for (let i = n - 1; i >= 0; i--) {
+    weeks.push(new Date(thisMonday.getTime() - i * 7 * 86400000));
+  }
+  return weeks;
+}
+
+async function buildReport() {
+    const now       = new Date();
+    const weekStart = new Date(now - 7 * 24 * 60 * 60 * 1000);
+    const prevStart = new Date(now - 14 * 24 * 60 * 60 * 1000);
+    const eightWeeksAgo = new Date(now - 8 * 7 * 24 * 60 * 60 * 1000);
+
+    // --- Current-week summary counts ---
+    const [
+      totalUsers, newUsersThisWeek, newUsersLastWeek,
+      totalGroups, newGroupsThisWeek, newGroupsLastWeek,
+      totalWishes, newWishesThisWeek, newWishesLastWeek,
+      totalGifted, giftedThisWeek, giftedLastWeek,
+      loginDocs, pageviewDocs, apiErrorDocs, apiDocs,
+    ] = await Promise.all([
+      securityUserModel.countDocuments(),
+      securityUserModel.countDocuments({ createdAt: { $gte: weekStart } }),
+      securityUserModel.countDocuments({ createdAt: { $gte: prevStart, $lt: weekStart } }),
+      groupModel.countDocuments({ inviteCode: { $ne: 'PUBLIC' } }),
+      groupModel.countDocuments({ inviteCode: { $ne: 'PUBLIC' }, createdAt: { $gte: weekStart } }),
+      groupModel.countDocuments({ inviteCode: { $ne: 'PUBLIC' }, createdAt: { $gte: prevStart, $lt: weekStart } }),
+      wishListModel.countDocuments(),
+      wishListModel.countDocuments({ item_create_date: { $gte: weekStart } }),
+      wishListModel.countDocuments({ item_create_date: { $gte: prevStart, $lt: weekStart } }),
+      wishListModel.countDocuments({ gifter_user_name: { $exists: true, $ne: '' } }),
+      wishListModel.countDocuments({ gifted_date: { $gte: weekStart } }),
+      wishListModel.countDocuments({ gifted_date: { $gte: prevStart, $lt: weekStart } }),
+      eventLogModel.find({ type: 'login',   timestamp: { $gte: weekStart } }, 'username').lean(),
+      eventLogModel.find({ type: 'pageview', timestamp: { $gte: weekStart } }, 'path').lean(),
+      eventLogModel.find({ type: 'api', status: { $gte: 400 }, timestamp: { $gte: weekStart } }, 'status').lean(),
+      eventLogModel.find({ type: 'api', timestamp: { $gte: weekStart } }, 'duration').lean(),
+    ]);
+
+    const top5Pages = Object.entries(
+      pageviewDocs.reduce((acc, e) => { acc[e.path] = (acc[e.path] || 0) + 1; return acc; }, {})
+    ).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([path, count]) => ({ path, count }));
+
+    const avgResponseTime = apiDocs.length
+      ? Math.round(apiDocs.reduce((s, e) => s + (e.duration || 0), 0) / apiDocs.length)
+      : null;
+
+    // --- Historical weekly data (last 8 weeks) ---
+    const weekStarts = lastNWeekStarts(8);
+    const weekLabels = weekStarts.map(isoWeekLabel);
+
+    // Fetch all relevant documents in the 8-week window once, then bucket client-side
+    const [histUsers, histGroups, histWishes, histGifted, histEvents] = await Promise.all([
+      securityUserModel.find({ createdAt: { $gte: eightWeeksAgo } }, 'createdAt').lean(),
+      groupModel.find({ inviteCode: { $ne: 'PUBLIC' }, createdAt: { $gte: eightWeeksAgo } }, 'createdAt').lean(),
+      wishListModel.find({ item_create_date: { $gte: eightWeeksAgo } }, 'item_create_date').lean(),
+      wishListModel.find({ gifted_date: { $gte: eightWeeksAgo } }, 'gifted_date').lean(),
+      eventLogModel.find({ timestamp: { $gte: eightWeeksAgo } }, 'type username path status duration timestamp').lean(),
+    ]);
+
+    function weekIndex(date) {
+      if (!date) return -1;
+      for (let i = weekStarts.length - 1; i >= 0; i--) {
+        if (date >= weekStarts[i]) return i;
+      }
+      return -1;
+    }
+
+    const newUsers    = Array(8).fill(0);
+    const newGroups   = Array(8).fill(0);
+    const newWishes   = Array(8).fill(0);
+    const gifted      = Array(8).fill(0);
+    const logins      = Array(8).fill(0);
+    const loginUsers  = Array.from({ length: 8 }, () => new Set());
+    const pageviews   = Array(8).fill(0);
+    const pageBreakdownSets = {};
+    const httpErrors  = Array(8).fill(0);
+    const responseSums  = Array(8).fill(0);
+    const responseCounts = Array(8).fill(0);
+
+    histUsers.forEach(u  => { const i = weekIndex(u.createdAt);    if (i >= 0) newUsers[i]++; });
+    histGroups.forEach(g => { const i = weekIndex(g.createdAt);    if (i >= 0) newGroups[i]++; });
+    histWishes.forEach(w => { const i = weekIndex(w.item_create_date); if (i >= 0) newWishes[i]++; });
+    histGifted.forEach(w => { const i = weekIndex(w.gifted_date);  if (i >= 0) gifted[i]++; });
+
+    histEvents.forEach(e => {
+      const i = weekIndex(e.timestamp);
+      if (i < 0) return;
+      if (e.type === 'login') {
+        logins[i]++;
+        if (e.username) loginUsers[i].add(e.username);
+      } else if (e.type === 'pageview') {
+        pageviews[i]++;
+        if (e.path) {
+          if (!pageBreakdownSets[e.path]) pageBreakdownSets[e.path] = Array(8).fill(0);
+          pageBreakdownSets[e.path][i]++;
+        }
+      } else if (e.type === 'api') {
+        if (e.status >= 400) httpErrors[i]++;
+        if (e.duration != null) { responseSums[i] += e.duration; responseCounts[i]++; }
+      }
+    });
+
+    // Top 5 pages by total views across 8 weeks
+    const top5HistPages = Object.entries(pageBreakdownSets)
+      .map(([path, counts]) => ({ path, total: counts.reduce((s, n) => s + n, 0), counts }))
+      .sort((a, b) => b.total - a.total).slice(0, 5);
+
+    const pageBreakdown = {};
+    top5HistPages.forEach(({ path, counts }) => { pageBreakdown[path] = counts; });
+
+    const avgResponseMs = responseCounts.map((c, i) => c ? Math.round(responseSums[i] / c) : null);
+
+    return {
+      generatedAt: now,
+      period: { from: weekStart, to: now },
+      stats: {
+        users:  { total: totalUsers,  thisWeek: newUsersThisWeek,  lastWeek: newUsersLastWeek },
+        groups: { total: totalGroups, thisWeek: newGroupsThisWeek, lastWeek: newGroupsLastWeek },
+        wishes: { total: totalWishes, thisWeek: newWishesThisWeek, lastWeek: newWishesLastWeek },
+        gifted: { total: totalGifted, thisWeek: giftedThisWeek,    lastWeek: giftedLastWeek },
+      },
+      logins: {
+        total:       loginDocs.length,
+        uniqueUsers: new Set(loginDocs.map(e => e.username)).size,
+        pageviews:   pageviewDocs.length,
+        top5Pages,
+      },
+      metrics: {
+        httpErrors:      apiErrorDocs.length,
+        avgResponseTime,
+      },
+      history: {
+        weeks:         weekLabels,
+        newUsers,
+        newGroups,
+        newWishes,
+        gifted,
+        logins,
+        uniqueLogins:  loginUsers.map(s => s.size),
+        pageviews,
+        pageBreakdown,
+        httpErrors,
+        avgResponseMs,
+      },
+    };
+}
+
+app.get('/Admin/Report', async (req, res) => {
+  if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
+  if (req.user.username !== process.env.ADMIN_USERNAME) return res.status(403).json({ error: 'Forbidden' });
+  try {
+    return res.json(await buildReport());
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+
 /*********************/
 /* ROUTES - SECURITY */
 /*********************/
@@ -406,6 +611,7 @@ app.get('/Auth/OAuth/google',
 app.get('/Auth/OAuth/google/callback',
   passport.authenticate('google', { failureRedirect: `${frontendUrl}/login?error=oauth_failed` }),
   (req, res) => {
+    eventLogModel.create({ type: 'login', username: req.user?.username }).catch(() => {});
     res.redirect(`${frontendUrl}/login?oauth_success=1`);
   }
 );
@@ -419,6 +625,7 @@ app.get('/Auth/OAuth/facebook',
 app.get('/Auth/OAuth/facebook/callback',
   passport.authenticate('facebook', { failureRedirect: `${frontendUrl}/login?error=oauth_failed` }),
   (req, res) => {
+    eventLogModel.create({ type: 'login', username: req.user?.username }).catch(() => {});
     res.redirect(`${frontendUrl}/login?oauth_success=1`);
   }
 );
@@ -426,7 +633,11 @@ app.get('/Auth/OAuth/facebook/callback',
 // Return current session user (called by client on app load to verify session)
 app.get('/Auth/Me', (req, res) => {
   if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
-  res.json({ username: req.user.username, displayName: req.user.displayName });
+  res.json({
+    username:    req.user.username,
+    displayName: req.user.displayName,
+    isAdmin:     req.user.username === process.env.ADMIN_USERNAME,
+  });
 });
 
 // Logout — destroys server session
@@ -462,6 +673,22 @@ if (require.main === module) {
   app.listen(port, () => {
     console.log(`WishXList webserver started on port ${port}`);
   });
+
+  // Weekly report cron — 8am Monday (server local time)
+  if (process.env.ADMIN_USERNAME && process.env.RESEND_API_KEY && process.env.ADMIN_EMAIL) {
+    const cron = require('node-cron');
+    const sendWeeklyReport = require('./report/sendWeeklyReport');
+    cron.schedule('0 8 * * 1', async () => {
+      try {
+        console.log('[cron] Generating weekly report...');
+        const data = await buildReport();
+        await sendWeeklyReport(data);
+        console.log('[cron] Weekly report sent.');
+      } catch (err) {
+        console.error('[cron] Weekly report failed:', err.message);
+      }
+    });
+  }
 }
 
 module.exports = app;

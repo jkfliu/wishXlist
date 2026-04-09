@@ -14,6 +14,7 @@ const store = new Vuex.Store({
     vuex_globalUser:      localStorage.getItem('vuex_globalUser')      || '',
     vuex_displayName:     localStorage.getItem('vuex_displayName')     || '',
     vuex_isAuthenticated: localStorage.getItem('vuex_isAuthenticated') === 'true',
+    vuex_isAdmin:         localStorage.getItem('vuex_isAdmin') === 'true',
     navVisible:           localStorage.getItem('navVisible') !== 'false',
     groups:               [],
     groupsLoaded:         false,
@@ -35,6 +36,10 @@ const store = new Vuex.Store({
     set_vuex_isAuthenticated(state, bool) {
       state.vuex_isAuthenticated = bool
       localStorage.setItem('vuex_isAuthenticated', String(bool))
+    },
+    set_vuex_isAdmin(state, bool) {
+      state.vuex_isAdmin = bool
+      localStorage.setItem('vuex_isAdmin', String(bool))
     },
     toggle_nav_visible(state) {
       state.navVisible = !state.navVisible
@@ -75,16 +80,19 @@ const store = new Vuex.Store({
           commit('set_vuex_globalUser', data.username);
           commit('set_vuex_displayName', data.displayName || '');
           commit('set_vuex_isAuthenticated', true);
+          commit('set_vuex_isAdmin', !!data.isAdmin);
           commit('set_session_validated_at', Date.now());
           await dispatch('fetchGroups');
         } else {
           commit('set_vuex_globalUser', '');
           commit('set_vuex_isAuthenticated', false);
+          commit('set_vuex_isAdmin', false);
           commit('set_groups', []);
         }
       } catch {
         commit('set_vuex_globalUser', '');
         commit('set_vuex_isAuthenticated', false);
+        commit('set_vuex_isAdmin', false);
         commit('set_groups', []);
       }
     },

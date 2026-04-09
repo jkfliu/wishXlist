@@ -15,6 +15,9 @@
     <router-link :to="{ name: 'about'            }" title="About">
       <i class="fas fa-info-circle"></i><span>About</span>
     </router-link>
+    <router-link v-if="isAdmin" :to="{ name: 'admin-report' }" title="Admin Stats">
+      <i class="fas fa-chart-line"></i><span>Admin Stats</span>
+    </router-link>
     <button class="toggle-btn nav-item" @click="$store.commit('toggle_nav_visible')" :title="$store.state.navVisible ? 'Collapse' : 'Expand'">
       <i :class="$store.state.navVisible ? 'fas fa-chevron-left' : 'fas fa-chevron-right'"></i><span>Collapse</span>
     </button>
@@ -24,6 +27,11 @@
 <script>
   export default {
     name: 'layout-side-bar',
+    computed: {
+      isAdmin() {
+        return this.$store.state.vuex_isAdmin
+      },
+    },
   }
 </script>
 

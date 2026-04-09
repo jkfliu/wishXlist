@@ -13,6 +13,7 @@ import Groups         from '@/components/Content/Groups.vue'
 
 import Login          from '@/components/Login.vue'
 import Profile        from '@/components/Profile.vue'
+import AdminReport    from '@/components/Admin/AdminReport.vue'
 
 import store          from '@/vuex_store.js'
 
@@ -37,7 +38,8 @@ const router = new Router({
     {path: '/profile',          name: 'profile',          component: Profile,        },
     {path: '/groups',           name: 'groups',           component: Groups,         },
     {path: '/my-wish-list',     name: 'my-wish-list',     component: MyWishList,     },
-    {path: '/group-wish-lists', name: 'group-wish-lists', component: GroupWishLists, }
+    {path: '/group-wish-lists', name: 'group-wish-lists', component: GroupWishLists, },
+    {path: '/admin/report',     name: 'admin-report',     component: AdminReport,    },
   ]
 })
 

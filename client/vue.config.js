@@ -13,6 +13,10 @@ module.exports = {
       '/Groups': {
         target: 'http://localhost:3000',
         changeOrigin: true
+      },
+      '/Admin': {
+        target: 'http://localhost:3000',
+        changeOrigin: true
       }
     }
   }
