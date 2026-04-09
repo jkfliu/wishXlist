@@ -2,7 +2,7 @@
   <div class="topnav">
     <div class="menu-left">
       <router-link :to="{name: 'home'}">
-        <img src="wish_X_list.logo.jpg" alt="wishXlist" height="80" align="center">
+        <img src="/wish_X_list.logo.jpg" alt="wishXlist" height="80" align="center">
       </router-link>
     </div>
 

@@ -63,4 +63,14 @@ router.beforeEach(async (to, from, next) => {
   }
 })
 
+router.afterEach((to) => {
+  if (to.path === '/login') return
+  fetch('/Events/Pageview', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path: to.path }),
+  }).catch(() => {})
+})
+
 export default router

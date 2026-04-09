@@ -188,7 +188,8 @@ app.use((req, res, next) => {
   const start = Date.now();
   res.on('finish', () => {
     if (/\.(js|css|png|ico|map|woff|woff2|ttf|svg)$/.test(req.path)) return;
-    const isApi = /^\/(Auth|WishList|Groups|Admin)/.test(req.path);
+    if (req.path === '/Events/Pageview') return;
+    const isApi = /^\/(Auth|WishList|Groups|Admin|Events)/.test(req.path);
     eventLogModel.create({
       type:      isApi ? 'api' : 'pageview',
       username:  req.user?.username || null,
@@ -473,7 +474,7 @@ async function buildReport() {
       wishListModel.countDocuments({ gifted_date: { $gte: prevStart, $lt: weekStart } }),
       eventLogModel.find({ type: 'login',   timestamp: { $gte: weekStart } }, 'username').lean(),
       eventLogModel.find({ type: 'pageview', timestamp: { $gte: weekStart } }, 'path').lean(),
-      eventLogModel.find({ type: 'api', status: { $gte: 400 }, timestamp: { $gte: weekStart } }, 'status').lean(),
+      eventLogModel.find({ type: 'api', status: { $gte: 400 }, timestamp: { $gte: weekStart } }, 'status path username timestamp').lean(),
       eventLogModel.find({ type: 'api', timestamp: { $gte: weekStart } }, 'duration').lean(),
     ]);
 
@@ -569,6 +570,7 @@ async function buildReport() {
       metrics: {
         httpErrors:      apiErrorDocs.length,
         avgResponseTime,
+        httpErrorList:   apiErrorDocs.map(e => ({ status: e.status, path: e.path, username: e.username || null, timestamp: e.timestamp })),
       },
       history: {
         weeks:         weekLabels,
@@ -585,6 +587,18 @@ async function buildReport() {
       },
     };
 }
+
+app.post('/Events/Pageview', (req, res) => {
+  const { path } = req.body;
+  if (!path || typeof path !== 'string') return res.status(400).json({ error: 'Invalid path' });
+  eventLogModel.create({
+    type:      'pageview',
+    username:  req.user?.username || null,
+    path:      path.slice(0, 200),
+    timestamp: new Date(),
+  }).catch(() => {});
+  res.sendStatus(204);
+});
 
 app.get('/Admin/Report', async (req, res) => {
   if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });

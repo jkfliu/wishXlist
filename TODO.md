@@ -48,7 +48,7 @@
 - [x] (Scalability) Deduplicate GET /Groups fetches — groups cached in Vuex, fetched once on login/app load
 
 ## Ops
-- [ ] Weekly report with 3 sections: Stats (# Users, # Groups, # Wishes, # Gifted — this week vs last week), Logins (# unique users, # logins, # page visits broken down by top 5 pages), Metrics (# HTTP errors, avg response time)
+- [x] Weekly report with 3 sections: Stats (# Users, # Groups, # Wishes, # Gifted — this week vs last week), Logins (# unique users, # logins, # page visits broken down by top 5 pages), Metrics (# HTTP errors, avg response time)
 
 ## Tech Debt
 - [ ] Consider migrating to React framework when the app scales

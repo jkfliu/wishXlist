@@ -14,14 +14,14 @@
         <h5>Stats</h5>
         <table class="report-table">
           <thead>
-            <tr><th></th><th>Total</th><th>This week</th><th>Last week</th></tr>
+            <tr><th></th><th class="col-num">Total</th><th class="col-num">Last week</th><th class="col-num">This week</th></tr>
           </thead>
           <tbody>
             <tr v-for="row in statsRows" :key="row.label">
               <td>{{ row.label }}</td>
-              <td>{{ row.total }}</td>
-              <td>{{ row.thisWeek }} <span :class="arrowClass(row.thisWeek, row.lastWeek)">{{ arrow(row.thisWeek, row.lastWeek) }}</span></td>
-              <td>{{ row.lastWeek }}</td>
+              <td class="col-num">{{ row.total }}</td>
+              <td class="col-num">{{ row.lastWeek }}</td>
+              <td class="col-num">{{ row.thisWeek }} <span :class="arrowClass(row.thisWeek, row.lastWeek)">{{ arrow(row.thisWeek, row.lastWeek) }}</span></td>
             </tr>
           </tbody>
         </table>
@@ -63,8 +63,21 @@
           <li>HTTP errors: <strong>{{ data.metrics.httpErrors }}</strong></li>
           <li>Avg response time: <strong>{{ data.metrics.avgResponseTime != null ? data.metrics.avgResponseTime + ' ms' : 'n/a' }}</strong></li>
         </ul>
+        <table class="report-table" v-if="data.metrics.httpErrorList.length">
+          <thead><tr><th>Status</th><th>Path</th><th>User</th><th>Time</th></tr></thead>
+          <tbody>
+            <tr v-for="(e, i) in data.metrics.httpErrorList" :key="i">
+              <td>{{ e.status }}</td>
+              <td><code>{{ e.path }}</code></td>
+              <td>{{ e.username || '—' }}</td>
+              <td>{{ new Date(e.timestamp).toLocaleString() }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-else class="muted">No HTTP errors this week.</p>
         <div class="chart-row">
-          <div class="chart-wrap"><chart-metrics :history="data.history" /></div>
+          <div class="chart-wrap"><chart-http-errors :history="data.history" /></div>
+          <div class="chart-wrap"><chart-avg-response :history="data.history" /></div>
         </div>
       </section>
 
@@ -78,11 +91,12 @@ import ChartUsersGroups  from './_ChartUsersGroups.vue'
 import ChartWishesGifted from './_ChartWishesGifted.vue'
 import ChartLogins       from './_ChartLogins.vue'
 import ChartPageViews    from './_ChartPageViews.vue'
-import ChartMetrics      from './_ChartMetrics.vue'
+import ChartHttpErrors   from './_ChartHttpErrors.vue'
+import ChartAvgResponse  from './_ChartAvgResponse.vue'
 
 export default {
   name: 'AdminReport',
-  components: { ChartUsersGroups, ChartWishesGifted, ChartLogins, ChartPageViews, ChartMetrics },
+  components: { ChartUsersGroups, ChartWishesGifted, ChartLogins, ChartPageViews, ChartHttpErrors, ChartAvgResponse },
 
   data() {
     return { data: null, loading: true, forbidden: false, error: false, errorDetail: '' }
@@ -162,6 +176,7 @@ h3 { margin-top: 0; }
   border-bottom: 1px solid #eee;
 }
 .report-table th { font-weight: 600; background: #f9f9f9; }
+.report-table .col-num { width: 20%; text-align: center; }
 
 .stat-list {
   list-style: none;

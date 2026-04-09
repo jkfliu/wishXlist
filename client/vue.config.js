@@ -17,6 +17,10 @@ module.exports = {
       '/Admin': {
         target: 'http://localhost:3000',
         changeOrigin: true
+      },
+      '/Events': {
+        target: 'http://localhost:3000',
+        changeOrigin: true
       }
     }
   }

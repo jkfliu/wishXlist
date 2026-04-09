@@ -1,7 +1,3 @@
-<template>
-  <bar-chart :chart-data="chartData" :options="options" />
-</template>
-
 <script>
 import { Bar } from 'vue-chartjs'
 
@@ -27,18 +23,6 @@ export default {
         stack: 'pages',
         yAxisID: 'left',
       }))
-      pageDatasets.push({
-        type: 'line',
-        label: 'Total Pageviews',
-        data: this.history.pageviews,
-        borderColor: 'rgba(150,150,150,1)',
-        backgroundColor: 'rgba(150,150,150,0.1)',
-        fill: false,
-        borderWidth: 2,
-        pointRadius: 3,
-        tension: 0.3,
-        yAxisID: 'right',
-      })
       return { labels: this.history.weeks, datasets: pageDatasets }
     },
     options() {
@@ -48,8 +32,7 @@ export default {
         title: { display: true, text: 'Page Views' },
         scales: {
           yAxes: [
-            { id: 'left',  position: 'left',  stacked: true, ticks: { beginAtZero: true } },
-            { id: 'right', position: 'right', ticks: { beginAtZero: true }, gridLines: { drawOnChartArea: false } },
+            { id: 'left', position: 'left', stacked: true, ticks: { beginAtZero: true } },
           ],
         },
       }
