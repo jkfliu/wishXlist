@@ -24,12 +24,7 @@
       const query = this.$route.query;
 
       if (query.logout) {
-        this.$store.commit('set_vuex_globalUser', '');
-        this.$store.commit('set_vuex_displayName', '');
-        this.$store.commit('set_vuex_isAuthenticated', false);
-        this.$store.commit('set_groups', []);
-        this.$store.commit('set_groups_loaded', false);
-        this.$store.commit('set_groups_error', false);
+        this.$store.dispatch('logout');
         this.message = 'You have been logged out.';
       }
 

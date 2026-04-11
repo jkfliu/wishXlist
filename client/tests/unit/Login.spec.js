@@ -37,17 +37,12 @@ describe('Login.vue', () => {
     expect(wrapper.find('.error-message').exists()).toBe(false)
   })
 
-  test('?logout=true clears Vuex store and shows logout message', async () => {
+  test('?logout=true dispatches logout action and shows logout message', async () => {
     const loggedInStore = createStore('jkfliu@gmail.com', true)
-    const commitSpy = jest.spyOn(loggedInStore, 'commit')
+    const dispatchSpy = jest.spyOn(loggedInStore, 'dispatch')
     const wrapper = createWrapper(loggedInStore, { logout: 'true' })
     await wrapper.vm.$nextTick()
-    expect(commitSpy).toHaveBeenCalledWith('set_vuex_globalUser', '')
-    expect(commitSpy).toHaveBeenCalledWith('set_vuex_displayName', '')
-    expect(commitSpy).toHaveBeenCalledWith('set_vuex_isAuthenticated', false)
-    expect(commitSpy).toHaveBeenCalledWith('set_groups', [])
-    expect(commitSpy).toHaveBeenCalledWith('set_groups_loaded', false)
-    expect(commitSpy).toHaveBeenCalledWith('set_groups_error', false)
+    expect(dispatchSpy).toHaveBeenCalledWith('logout')
     expect(wrapper.find('.info-message').exists()).toBe(true)
     expect(wrapper.vm.message).toContain('logged out')
   })

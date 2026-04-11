@@ -23,23 +23,6 @@
   export default {
     name: 'layout-overall',
 
-    mounted() {
-      this.ensureNavOnLogin(this.$route)
-    },
-
-    watch: {
-      $route(to) {
-        this.ensureNavOnLogin(to)
-      }
-    },
-
-    methods: {
-      ensureNavOnLogin(route) {
-        if (window.innerWidth <= 600 && route.name === 'login') {
-          this.$store.commit('set_nav_visible', true)
-        }
-      }
-    },
   }
 </script>
 
