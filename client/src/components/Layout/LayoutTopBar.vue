@@ -33,6 +33,7 @@
       async confirmLogout() {
         if (!confirm('Are you sure you want to log out?')) return
         await fetch('/Auth/Logout', { method: 'POST', credentials: 'include' })
+        this.$store.dispatch('logout')
         this.$router.push({ name: 'login', query: { logout: true } }).catch(() => {})
       },
     }

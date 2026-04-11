@@ -9,7 +9,7 @@ const eventLogSchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now },
 });
 
-eventLogSchema.index({ timestamp: 1 });
+eventLogSchema.index({ timestamp: 1 }, { expireAfterSeconds: 90 * 24 * 60 * 60 }); // TTL: auto-delete after 90 days
 eventLogSchema.index({ type: 1, timestamp: 1 });
 
 module.exports = eventLogSchema;

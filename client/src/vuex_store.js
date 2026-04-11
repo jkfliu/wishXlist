@@ -4,9 +4,9 @@ import Vuex from 'vuex'
 
 Vue.use(Vuex)
 
-// On first visit (no stored preference), collapse nav on mobile
-if (localStorage.getItem('navVisible') === null) {
-  localStorage.setItem('navVisible', String(window.innerWidth > 600))
+// Collapse nav at the start of every session; persist within the session as user toggles
+if (sessionStorage.getItem('navVisible') === null) {
+  sessionStorage.setItem('navVisible', 'false')
 }
 
 const store = new Vuex.Store({
@@ -15,7 +15,7 @@ const store = new Vuex.Store({
     vuex_displayName:     localStorage.getItem('vuex_displayName')     || '',
     vuex_isAuthenticated: localStorage.getItem('vuex_isAuthenticated') === 'true',
     vuex_isAdmin:         localStorage.getItem('vuex_isAdmin') === 'true',
-    navVisible:           localStorage.getItem('navVisible') !== 'false',
+    navVisible:           sessionStorage.getItem('navVisible') !== 'false',
     groups:               [],
     groupsLoaded:         false,
     groupsError:          false,
@@ -43,7 +43,7 @@ const store = new Vuex.Store({
     },
     toggle_nav_visible(state) {
       state.navVisible = !state.navVisible
-      localStorage.setItem('navVisible', String(state.navVisible))
+      sessionStorage.setItem('navVisible', String(state.navVisible))
     },
     set_nav_visible(state, bool) {
       state.navVisible = bool
@@ -95,6 +95,14 @@ const store = new Vuex.Store({
         commit('set_vuex_isAdmin', false);
         commit('set_groups', []);
       }
+    },
+
+    logout({ commit }) {
+      commit('set_vuex_globalUser', '');
+      commit('set_vuex_displayName', '');
+      commit('set_vuex_isAuthenticated', false);
+      commit('set_vuex_isAdmin', false);
+      commit('set_groups', []);
     },
 
     async fetchGroups({ commit }) {

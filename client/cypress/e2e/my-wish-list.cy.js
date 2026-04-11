@@ -6,7 +6,7 @@ const seedItem = {
   user_name:         USER,
   item_name:         'Test Item',
   model:             'Model X',
-  price:             '99.99',
+  price:             99.99,
   store:             'Amazon',
   gifter_user_name:  '',
   gifted_date:       null,
@@ -20,9 +20,9 @@ beforeEach(() => {
 })
 
 describe('My Wish List - add item', () => {
-  it('calls POST /WishList/Create (exact case)', () => {
+  it('calls POST /WishList', () => {
     const newItem = { ...seedItem, _id: '507f1f77bcf86cd799439012', item_name: 'New Item' }
-    cy.intercept('POST', `${API}/WishList/Create`, newItem).as('createItem')
+    cy.intercept('POST', `${API}/WishList`, newItem).as('createItem')
 
     cy.get('#wish-item-form input').first().type('New Item')
     cy.contains('button', 'Add Item').click()
@@ -32,8 +32,8 @@ describe('My Wish List - add item', () => {
 })
 
 describe('My Wish List - edit item', () => {
-  it('calls POST /WishList/Update (exact case)', () => {
-    cy.intercept('POST', `${API}/WishList/Update`, { ...seedItem, item_name: 'Edited Item' }).as('updateItem')
+  it('calls PUT /WishList/:id', () => {
+    cy.intercept('PUT', `${API}/WishList/${ITEM_ID}`, { ...seedItem, item_name: 'Edited Item' }).as('updateItem')
 
     cy.get('.fa-edit').click({ force: true })
     cy.get('#wish-list-table input').first().clear().type('Edited Item')
@@ -44,8 +44,8 @@ describe('My Wish List - edit item', () => {
 })
 
 describe('My Wish List - delete item', () => {
-  it('calls POST /WishList/Delete/:id (exact case)', () => {
-    cy.intercept('POST', `${API}/WishList/Delete/${ITEM_ID}`, seedItem).as('deleteItem')
+  it('calls DELETE /WishList/:id', () => {
+    cy.intercept('DELETE', `${API}/WishList/${ITEM_ID}`, seedItem).as('deleteItem')
 
     cy.on('window:confirm', () => true)
     cy.get('.fa-trash-alt').click({ force: true })

@@ -45,6 +45,7 @@
         } catch (err) {
           console.error(err);
         }
+        this.$store.dispatch('logout')
         this.$router.push('/login?logout=true');
       }
     }

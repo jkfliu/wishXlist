@@ -38,6 +38,7 @@
 - [x] Fix price field from String to Number in WishListItem schema
 
 ## Frontend
+- [x] Check left hand navigation is collapsed across all pages on mobile devices - use sessionStorage rather than localStorage
 - [x] Re-validate server session on route change (router re-validates via /Auth/Me every 2 min)
 - [x] Cache wish list items (GET /WishList) and group members (GET /Groups/Members?groupId=) in Vuex
 - [x] When left menu is minimised, show icons instead of hiding it completely — icons shown, labels hidden; collapse toggle at bottom of sidebar

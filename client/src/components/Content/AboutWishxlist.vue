@@ -5,10 +5,11 @@
     <br>
     <br>Please send feedback/suggestions to <a href="mailto:jkfliu@gmail.com?subject=wishXlist Feedback">Jason Liu</a>.
     <br>
-    <br>Further work to be done:
+    <br>Here's the ongoing TODO list:
       <ul>
         <li>(Done) Allowing wish list items to be group-specific</li>
         <li>(Done) Implemented DB indexing and Vuex cacheing</li>
+        <li>(Done) Generate weekly usage metrics/stats (Admin-only)</li>
       </ul>
    
   </div>
