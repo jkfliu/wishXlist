@@ -6,6 +6,7 @@ const eventLogSchema = new mongoose.Schema({
   path:      { type: String },
   status:    { type: Number },                  // HTTP status code
   duration:  { type: Number },                  // ms
+  responseBody: { type: String },               // error string for 4xx/5xx responses
   timestamp: { type: Date, default: Date.now },
 });
 

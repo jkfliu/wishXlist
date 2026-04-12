@@ -1,3 +1,7 @@
+<template>
+  <line-chart :chart-data="chartData" :options="options" />
+</template>
+
 <script>
 import { Line } from 'vue-chartjs'
 

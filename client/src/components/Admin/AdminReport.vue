@@ -39,17 +39,36 @@
           <li>Unique users logged in: <strong>{{ data.logins.uniqueUsers }}</strong></li>
           <li>Page views: <strong>{{ data.logins.pageviews }}</strong></li>
         </ul>
-        <h6>Top pages this week</h6>
-        <table class="report-table" v-if="data.logins.top5Pages.length">
-          <thead><tr><th>Page</th><th>Views</th></tr></thead>
-          <tbody>
-            <tr v-for="p in data.logins.top5Pages" :key="p.path">
-              <td><code>{{ p.path }}</code></td>
-              <td>{{ p.count }}</td>
-            </tr>
-          </tbody>
-        </table>
-        <p v-else class="muted">No page views recorded yet.</p>
+        <h6 class="collapsible-heading" @click="showTopUsers = !showTopUsers">
+          Top users this week <span class="chevron">{{ showTopUsers ? '▲' : '▼' }}</span>
+        </h6>
+        <div v-show="showTopUsers">
+          <table class="report-table" v-if="data.logins.top5Users && data.logins.top5Users.length">
+            <thead><tr><th>User</th><th>Page views</th></tr></thead>
+            <tbody>
+              <tr v-for="u in data.logins.top5Users" :key="u.username">
+                <td>{{ u.username }}</td>
+                <td>{{ u.count }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p v-else class="muted">No user page views recorded yet.</p>
+        </div>
+        <h6 class="collapsible-heading" @click="showTopPages = !showTopPages">
+          Top pages this week <span class="chevron">{{ showTopPages ? '▲' : '▼' }}</span>
+        </h6>
+        <div v-show="showTopPages">
+          <table class="report-table" v-if="data.logins.top5Pages.length">
+            <thead><tr><th>Page</th><th>Views</th></tr></thead>
+            <tbody>
+              <tr v-for="p in data.logins.top5Pages" :key="p.path">
+                <td><code>{{ p.path }}</code></td>
+                <td>{{ p.count }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p v-else class="muted">No page views recorded yet.</p>
+        </div>
         <div class="chart-row">
           <div class="chart-wrap"><chart-logins :history="data.history" /></div>
           <div class="chart-wrap"><chart-page-views :history="data.history" /></div>
@@ -63,18 +82,24 @@
           <li>HTTP errors: <strong>{{ data.metrics.httpErrors }}</strong></li>
           <li>Avg response time: <strong>{{ data.metrics.avgResponseTime != null ? data.metrics.avgResponseTime + ' ms' : 'n/a' }}</strong></li>
         </ul>
-        <table class="report-table" v-if="data.metrics.httpErrorList.length">
-          <thead><tr><th>Status</th><th>Path</th><th>User</th><th>Time</th></tr></thead>
-          <tbody>
-            <tr v-for="(e, i) in data.metrics.httpErrorList" :key="i">
-              <td>{{ e.status }}</td>
-              <td><code>{{ e.path }}</code></td>
-              <td>{{ e.username || '—' }}</td>
-              <td>{{ new Date(e.timestamp).toLocaleString() }}</td>
-            </tr>
-          </tbody>
-        </table>
-        <p v-else class="muted">No HTTP errors this week.</p>
+        <h6 class="collapsible-heading" @click="showHttpErrors = !showHttpErrors">
+          HTTP error details <span class="chevron">{{ showHttpErrors ? '▲' : '▼' }}</span>
+        </h6>
+        <div v-show="showHttpErrors">
+          <table class="report-table" v-if="data.metrics.httpErrorList.length">
+            <thead><tr><th>Status</th><th>Path</th><th>User</th><th>Response</th><th>Time</th></tr></thead>
+            <tbody>
+              <tr v-for="(e, i) in data.metrics.httpErrorList" :key="i">
+                <td>{{ e.status }}</td>
+                <td><code>{{ e.path }}</code></td>
+                <td>{{ e.username || '—' }}</td>
+                <td><span class="response-body">{{ e.responseBody || '—' }}</span></td>
+                <td>{{ new Date(e.timestamp).toLocaleString() }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p v-else class="muted">No HTTP errors this week.</p>
+        </div>
         <div class="chart-row">
           <div class="chart-wrap"><chart-http-errors :history="data.history" /></div>
           <div class="chart-wrap"><chart-avg-response :history="data.history" /></div>
@@ -99,7 +124,7 @@ export default {
   components: { ChartUsersGroups, ChartWishesGifted, ChartLogins, ChartPageViews, ChartHttpErrors, ChartAvgResponse },
 
   data() {
-    return { data: null, loading: true, forbidden: false, error: false, errorDetail: '' }
+    return { data: null, loading: true, forbidden: false, error: false, errorDetail: '', showTopUsers: false, showTopPages: false, showHttpErrors: false }
   },
 
   computed: {
@@ -200,4 +225,8 @@ h3 { margin-top: 0; }
 .arrow-down { color: #d33c40; }
 
 h6 { margin: 0.75rem 0 0.25rem; font-size: 0.9rem; color: #555; }
+.response-body { font-size: 0.8rem; color: #555; word-break: break-word; }
+.collapsible-heading { cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center; }
+.collapsible-heading:hover { color: #333; }
+.chevron { font-size: 0.75rem; color: #aaa; }
 </style>

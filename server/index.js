@@ -186,16 +186,27 @@ passport.deserializeUser(async (id, done) => {
 // Log page views, API calls, and HTTP errors to EventLog collection
 app.use((req, res, next) => {
   const start = Date.now();
+  // Intercept res.json to capture error body for 4xx/5xx logging
+  const origJson = res.json.bind(res);
+  res.json = function (body) {
+    if (res.statusCode >= 400 && body) {
+      res._logBody = typeof body.error === 'string'
+        ? body.error
+        : JSON.stringify(body).slice(0, 200);
+    }
+    return origJson(body);
+  };
   res.on('finish', () => {
     if (/\.(js|css|png|ico|map|woff|woff2|ttf|svg)$/.test(req.path)) return;
     if (req.path === '/Events/Pageview') return;
     const isApi = /^\/(Auth|WishList|Groups|Admin|Events)/.test(req.path);
     eventLogModel.create({
-      type:      isApi ? 'api' : 'pageview',
-      username:  req.user?.username || null,
-      path:      req.path,
-      status:    res.statusCode,
-      duration:  Date.now() - start,
+      type:         isApi ? 'api' : 'pageview',
+      username:     req.user?.username || null,
+      path:         req.path,
+      status:       res.statusCode,
+      duration:     Date.now() - start,
+      responseBody: res._logBody || null,
     }).catch(() => {});
   });
   next();
@@ -473,14 +484,21 @@ async function buildReport() {
       wishListModel.countDocuments({ gifted_date: { $gte: weekStart } }),
       wishListModel.countDocuments({ gifted_date: { $gte: prevStart, $lt: weekStart } }),
       eventLogModel.find({ type: 'login',   timestamp: { $gte: weekStart } }, 'username').lean(),
-      eventLogModel.find({ type: 'pageview', timestamp: { $gte: weekStart } }, 'path').lean(),
-      eventLogModel.find({ type: 'api', status: { $gte: 400 }, timestamp: { $gte: weekStart } }, 'status path username timestamp').lean(),
+      eventLogModel.find({ type: 'pageview', timestamp: { $gte: weekStart } }, 'path username').lean(),
+      eventLogModel.find({ type: 'api', status: { $gte: 400 }, timestamp: { $gte: weekStart } }, 'status path username timestamp responseBody').lean(),
       eventLogModel.find({ type: 'api', timestamp: { $gte: weekStart } }, 'duration').lean(),
     ]);
 
     const top5Pages = Object.entries(
       pageviewDocs.reduce((acc, e) => { acc[e.path] = (acc[e.path] || 0) + 1; return acc; }, {})
     ).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([path, count]) => ({ path, count }));
+
+    const top5Users = Object.entries(
+      pageviewDocs.reduce((acc, e) => {
+        if (e.username) { acc[e.username] = (acc[e.username] || 0) + 1; }
+        return acc;
+      }, {})
+    ).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([username, count]) => ({ username, count }));
 
     const avgResponseTime = apiDocs.length
       ? Math.round(apiDocs.reduce((s, e) => s + (e.duration || 0), 0) / apiDocs.length)
@@ -566,11 +584,12 @@ async function buildReport() {
         uniqueUsers: new Set(loginDocs.map(e => e.username)).size,
         pageviews:   pageviewDocs.length,
         top5Pages,
+        top5Users,
       },
       metrics: {
         httpErrors:      apiErrorDocs.length,
         avgResponseTime,
-        httpErrorList:   apiErrorDocs.map(e => ({ status: e.status, path: e.path, username: e.username || null, timestamp: e.timestamp })),
+        httpErrorList:   apiErrorDocs.map(e => ({ status: e.status, path: e.path, username: e.username || null, timestamp: e.timestamp, responseBody: e.responseBody || null })),
       },
       history: {
         weeks:         weekLabels,
