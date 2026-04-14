@@ -98,28 +98,7 @@ db_connection.on('open',  async () => {
     { $setOnInsert: { name: 'Public', inviteCode: 'PUBLIC', members: [], createdAt: new Date() } },
     { upsert: true, new: true }
   );
-  // Migration: backfill gifterDisplayName for existing gifted items
-  try {
-    const items = await wishListModel.find({
-      gifter_user_name: { $exists: true, $ne: '' },
-      $or: [{ gifterDisplayName: { $exists: false } }, { gifterDisplayName: '' }],
-    }, '_id gifter_user_name').lean();
-    if (items.length > 0) {
-      const emails   = [...new Set(items.map(i => i.gifter_user_name))];
-      const users    = await securityUserModel.find({ username: { $in: emails } }, 'username displayName').lean();
-      const nameMap  = Object.fromEntries(users.map(u => [u.username, u.displayName || u.username]));
-      const ops      = items.map(i => ({
-        updateOne: {
-          filter: { _id: i._id },
-          update: { $set: { gifterDisplayName: nameMap[i.gifter_user_name] || i.gifter_user_name } },
-        },
-      }));
-      const result = await wishListModel.bulkWrite(ops);
-      console.log(`[migration] backfilled gifterDisplayName for ${result.modifiedCount} item(s).`);
-    }
-  } catch (err) {
-    console.error('[migration] gifterDisplayName backfill failed:', err.message);
-  }
+
 });
 db_connection.on('error', (error) => { console.log(error) });
 
