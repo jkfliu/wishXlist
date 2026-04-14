@@ -29,6 +29,9 @@ const wishListItemSchema = new mongoose.Schema ({
   gifter_user_name: {
     type: String
   },
+  gifterDisplayName: {
+    type: String
+  },
   gifted_date: {
     type: Date
   },

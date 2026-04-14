@@ -5,7 +5,6 @@
     <table>
       <thead>
         <tr>
-          <th>User</th>
           <th data-sort="displayName" @click="setSort('displayName')">Name {{ sortIndicator('displayName') }}</th>
           <th data-sort="item_name"  @click="setSort('item_name')">Item Name* {{ sortIndicator('item_name') }}</th>
           <th data-sort="model"      @click="setSort('model')">Model {{ sortIndicator('model') }}</th>
@@ -20,8 +19,7 @@
 
       <tbody>
         <tr v-for="wish_item in sortedList" :key="wish_item._id">
-          <td> {{ wish_item.user_name }} </td>
-          <td> {{ wish_item.displayName }} </td>
+          <td><a :href="'mailto:' + wish_item.user_name">{{ wish_item.displayName }}</a></td>
 
           <td v-if="editing === wish_item._id"><input type="text" v-model="wish_item.item_name" /></td>
           <td v-else>{{ wish_item.item_name }}</td>
@@ -40,7 +38,9 @@
 
           <td> {{ toDate(wish_item.item_create_date) }} </td>
 
-          <td> {{ wish_item.gifter_user_name }} </td>
+          <td>
+            <a v-if="wish_item.gifter_user_name" :href="'mailto:' + wish_item.gifter_user_name">{{ wish_item.gifterDisplayName || wish_item.gifter_user_name }}</a>
+          </td>
           <td> {{ toDate(wish_item.gifted_date) }} </td>
 
           <td v-if="editing === wish_item._id">

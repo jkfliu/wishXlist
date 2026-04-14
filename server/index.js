@@ -98,6 +98,28 @@ db_connection.on('open',  async () => {
     { $setOnInsert: { name: 'Public', inviteCode: 'PUBLIC', members: [], createdAt: new Date() } },
     { upsert: true, new: true }
   );
+  // Migration: backfill gifterDisplayName for existing gifted items
+  try {
+    const items = await wishListModel.find({
+      gifter_user_name: { $exists: true, $ne: '' },
+      $or: [{ gifterDisplayName: { $exists: false } }, { gifterDisplayName: '' }],
+    }, '_id gifter_user_name').lean();
+    if (items.length > 0) {
+      const emails   = [...new Set(items.map(i => i.gifter_user_name))];
+      const users    = await securityUserModel.find({ username: { $in: emails } }, 'username displayName').lean();
+      const nameMap  = Object.fromEntries(users.map(u => [u.username, u.displayName || u.username]));
+      const ops      = items.map(i => ({
+        updateOne: {
+          filter: { _id: i._id },
+          update: { $set: { gifterDisplayName: nameMap[i.gifter_user_name] || i.gifter_user_name } },
+        },
+      }));
+      const result = await wishListModel.bulkWrite(ops);
+      console.log(`[migration] backfilled gifterDisplayName for ${result.modifiedCount} item(s).`);
+    }
+  } catch (err) {
+    console.error('[migration] gifterDisplayName backfill failed:', err.message);
+  }
 });
 db_connection.on('error', (error) => { console.log(error) });
 
@@ -283,7 +305,7 @@ app.put('/WishList/:_id', async (req, res) => {
     const isOwner  = item.user_name === req.user.username;
     const isGifter = !item.gifter_user_name && req.body.gifter_user_name === req.user.username;
     if (!isOwner && !isGifter) return res.status(403).json({ error: 'Forbidden' });
-    const data = await wishListModel.findByIdAndUpdate(req.params._id, {
+    const update = {
       item_name:          req.body.item_name,
       model:              req.body.model,
       price:              req.body.price,
@@ -292,7 +314,9 @@ app.put('/WishList/:_id', async (req, res) => {
       gifter_user_name:   req.body.gifter_user_name,
       gifted_date:        req.body.gifted_date,
       visibleToGroups:    req.body.visibleToGroups,
-    }, { new: true });
+    };
+    if (isGifter) update.gifterDisplayName = req.user.displayName || req.user.username;
+    const data = await wishListModel.findByIdAndUpdate(req.params._id, update, { new: true });
     return res.json(data);
   } catch (err) {
     console.error(err);
