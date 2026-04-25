@@ -124,7 +124,7 @@ export default {
   components: { ChartUsersGroups, ChartWishesGifted, ChartLogins, ChartPageViews, ChartHttpErrors, ChartAvgResponse },
 
   data() {
-    return { data: null, loading: true, forbidden: false, error: false, errorDetail: '', showTopUsers: false, showTopPages: false, showHttpErrors: false }
+    return { data: null, loading: true, forbidden: false, error: false, errorDetail: '', showTopUsers: true, showTopPages: false, showHttpErrors: false }
   },
 
   computed: {
