@@ -53,4 +53,5 @@
 - [x] Weekly report with 3 sections: Stats (# Users, # Groups, # Wishes, # Gifted — this week vs last week), Logins (# unique users, # logins, # page visits broken down by top 5 pages), Metrics (# HTTP errors, avg response time)
 
 ## Tech Debt
+- [ ] Server Jest run doesn't exit without --forceExit — likely the connect-mongo session store's own MongoClient is never closed in test teardown
 - [ ] Consider migrating to React framework when the app scales

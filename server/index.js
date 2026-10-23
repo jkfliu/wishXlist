@@ -8,6 +8,7 @@ const MongoStore = require('connect-mongo');
 const cors       = require('cors');
 const mongoose   = require('mongoose');
 const bodyParser = require('body-parser');
+const { runInBackground } = require('./background');
 
 // Initialise express server
 const app = express();
@@ -201,14 +202,14 @@ app.use((req, res, next) => {
     if (/\.(js|css|png|ico|map|woff|woff2|ttf|svg)$/.test(req.path)) return;
     if (req.path === '/Events/Pageview') return;
     const isApi = /^\/(Auth|WishList|Groups|Admin|Events)/.test(req.path);
-    eventLogModel.create({
+    runInBackground(eventLogModel.create({
       type:         isApi ? 'api' : 'pageview',
       username:     req.user?.username || null,
       path:         req.path,
       status:       res.statusCode,
       duration:     Date.now() - start,
       responseBody: res._logBody || null,
-    }).catch(() => {});
+    }));
   });
   next();
 });
@@ -613,12 +614,12 @@ async function buildReport() {
 app.post('/Events/Pageview', (req, res) => {
   const { path } = req.body;
   if (!path || typeof path !== 'string') return res.status(400).json({ error: 'Invalid path' });
-  eventLogModel.create({
+  runInBackground(eventLogModel.create({
     type:      'pageview',
     username:  req.user?.username || null,
     path:      path.slice(0, 200),
     timestamp: new Date(),
-  }).catch(() => {});
+  }));
   res.sendStatus(204);
 });
 
@@ -672,7 +673,7 @@ app.get('/Auth/OAuth/google',
 app.get('/Auth/OAuth/google/callback',
   passport.authenticate('google', { failureRedirect: `${frontendUrl}/login?error=oauth_failed` }),
   (req, res) => {
-    eventLogModel.create({ type: 'login', username: req.user?.username }).catch(() => {});
+    runInBackground(eventLogModel.create({ type: 'login', username: req.user?.username }));
     res.redirect(`${frontendUrl}/login?oauth_success=1`);
   }
 );
@@ -686,7 +687,7 @@ app.get('/Auth/OAuth/facebook',
 app.get('/Auth/OAuth/facebook/callback',
   passport.authenticate('facebook', { failureRedirect: `${frontendUrl}/login?error=oauth_failed` }),
   (req, res) => {
-    eventLogModel.create({ type: 'login', username: req.user?.username }).catch(() => {});
+    runInBackground(eventLogModel.create({ type: 'login', username: req.user?.username }));
     res.redirect(`${frontendUrl}/login?oauth_success=1`);
   }
 );
