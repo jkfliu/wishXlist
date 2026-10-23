@@ -633,6 +633,31 @@ app.get('/Admin/Report', async (req, res) => {
   }
 });
 
+// Weekly report email — triggered by Vercel Cron (GET, 8am UTC Monday) with Authorization: Bearer <CRON_SECRET>
+function hasCronSecret(header) {
+  const expected = Buffer.from(`Bearer ${process.env.CRON_SECRET}`);
+  const actual   = Buffer.from(header || '');
+  return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
+}
+
+app.get('/Cron/WeeklyReport', async (req, res) => {
+  if (!process.env.CRON_SECRET) return res.status(503).json({ error: 'CRON_SECRET not configured' });
+  if (!hasCronSecret(req.headers.authorization)) return res.status(401).json({ error: 'Unauthorized' });
+  if (!process.env.ADMIN_USERNAME || !process.env.RESEND_API_KEY || !process.env.ADMIN_EMAIL) {
+    return res.status(503).json({ error: 'Weekly report email not configured' });
+  }
+  try {
+    // Required lazily: the Resend client throws at load time when RESEND_API_KEY is unset
+    const sendWeeklyReport = require('./report/sendWeeklyReport');
+    await sendWeeklyReport(await buildReport());
+    console.log('[cron] Weekly report sent.');
+    return res.json({ sent: true });
+  } catch (err) {
+    console.error('[cron] Weekly report failed:', err.message);
+    return res.status(500).json({ error: 'Weekly report failed' });
+  }
+});
+
 
 /*********************/
 /* ROUTES - SECURITY */
@@ -709,22 +734,6 @@ if (require.main === module) {
   app.listen(port, () => {
     console.log(`WishXList webserver started on port ${port}`);
   });
-
-  // Weekly report cron — 8am Monday (server local time)
-  if (process.env.ADMIN_USERNAME && process.env.RESEND_API_KEY && process.env.ADMIN_EMAIL) {
-    const cron = require('node-cron');
-    const sendWeeklyReport = require('./report/sendWeeklyReport');
-    cron.schedule('0 8 * * 1', async () => {
-      try {
-        console.log('[cron] Generating weekly report...');
-        const data = await buildReport();
-        await sendWeeklyReport(data);
-        console.log('[cron] Weekly report sent.');
-      } catch (err) {
-        console.error('[cron] Weekly report failed:', err.message);
-      }
-    });
-  }
 }
 
 module.exports = app;
