@@ -1,0 +1,25 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "cd client && npm ci --legacy-peer-deps && cd ../server && npm ci --omit=dev",
+  "buildCommand": "cd client && npm run build",
+  "outputDirectory": "client/dist",
+  "regions": ["sin1"],
+  "functions": {
+    "api/index.js": { "includeFiles": "client/dist/index.html" }
+  },
+  "rewrites": [
+    { "source": "/Auth/:path*",     "destination": "/api/index" },
+    { "source": "/WishList",        "destination": "/api/index" },
+    { "source": "/WishList/:path*", "destination": "/api/index" },
+    { "source": "/Groups",          "destination": "/api/index" },
+    { "source": "/Groups/:path*",   "destination": "/api/index" },
+    { "source": "/Admin/:path*",    "destination": "/api/index" },
+    { "source": "/Events/:path*",   "destination": "/api/index" },
+    { "source": "/Cron/:path*",     "destination": "/api/index" },
+    { "source": "/(.*)",            "destination": "/index.html" }
+  ],
+  "crons": [
+    { "path": "/Cron/WeeklyReport", "schedule": "0 8 * * 1" }
+  ]
+}

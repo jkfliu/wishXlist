@@ -1,0 +1,8 @@
+{
+  "name": "wishxlist",
+  "private": true,
+  "description": "Root manifest for Vercel: pins the Node version. App packages live in client/ and server/.",
+  "engines": {
+    "node": "22.x"
+  }
+}
