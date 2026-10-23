@@ -87,6 +87,11 @@ describe('vercel.json', () => {
     expect(config.functions?.['api/index.js']?.includeFiles).toBe('client/dist/index.html');
   });
 
+  test('installs client devDependencies even when NODE_ENV=production (the build tool is a devDependency)', () => {
+    const clientInstall = (config.installCommand || '').split('&&').find(step => /npm ci/.test(step) && /--legacy-peer-deps/.test(step));
+    expect(clientInstall).toContain('--include=dev');
+  });
+
   test('runs functions in Singapore, next to the Atlas cluster', () => {
     expect(config.regions).toEqual(['sin1']);
   });
