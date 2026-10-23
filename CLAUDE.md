@@ -4,11 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Running the app
 
-Requires Node 18 (via nvm) and MongoDB running locally.
+Requires Node 22 (via nvm) and MongoDB running locally.
 
 ```bash
-# Load Node 18
-export NVM_DIR="/Users/jasonliu/.nvm" && source "/opt/homebrew/opt/nvm/nvm.sh" && nvm use 18
+# Load Node 22
+export NVM_DIR="/Users/jasonliu/.nvm" && source "/opt/homebrew/opt/nvm/nvm.sh" && nvm use 22
 
 # Start MongoDB (if not running)
 brew services start mongodb-community
@@ -40,7 +40,7 @@ cd client && npx vue-cli-service test:unit --coverage
 ```
 
 ```bash
-# Cypress E2E (must use system Node — NOT nvm Node 18)
+# Cypress E2E (must use system Node — NOT nvm Node 22)
 cd client && unset ELECTRON_RUN_AS_NODE && npx cypress run
 ```
 
