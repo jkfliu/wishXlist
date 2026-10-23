@@ -40,7 +40,7 @@ cd client && npx vue-cli-service test:unit --coverage
 ```
 
 ```bash
-# Cypress E2E (must use system Node — NOT nvm Node 22)
+# Cypress E2E (nvm Node 22 is fine; Node 18 breaks it). Start `npm run serve` first: specs stub the API, so no backend needed
 cd client && unset ELECTRON_RUN_AS_NODE && npx cypress run
 ```
 
