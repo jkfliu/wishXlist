@@ -38,6 +38,7 @@
 - [x] Fix price field from String to Number in WishListItem schema
 
 ## Frontend
+- [ ] Deduplicate initial-load API calls — every page load calls GET /Auth/Me and GET /Groups twice (seen in EventLog during Vercel preview, 2026-10-24; pre-existing on Railway)
 - [x] Check left hand navigation is collapsed across all pages on mobile devices - use sessionStorage rather than localStorage
 - [x] Re-validate server session on route change (router re-validates via /Auth/Me every 2 min)
 - [x] Cache wish list items (GET /WishList) and group members (GET /Groups/Members?groupId=) in Vuex
