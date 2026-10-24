@@ -8,6 +8,7 @@ const MongoStore = require('connect-mongo');
 const cors       = require('cors');
 const mongoose   = require('mongoose');
 const bodyParser = require('body-parser');
+const { runInBackground } = require('./background');
 
 // Initialise express server
 const app = express();
@@ -201,14 +202,14 @@ app.use((req, res, next) => {
     if (/\.(js|css|png|ico|map|woff|woff2|ttf|svg)$/.test(req.path)) return;
     if (req.path === '/Events/Pageview') return;
     const isApi = /^\/(Auth|WishList|Groups|Admin|Events)/.test(req.path);
-    eventLogModel.create({
+    runInBackground(eventLogModel.create({
       type:         isApi ? 'api' : 'pageview',
       username:     req.user?.username || null,
       path:         req.path,
       status:       res.statusCode,
       duration:     Date.now() - start,
       responseBody: res._logBody || null,
-    }).catch(() => {});
+    }));
   });
   next();
 });
@@ -613,12 +614,12 @@ async function buildReport() {
 app.post('/Events/Pageview', (req, res) => {
   const { path } = req.body;
   if (!path || typeof path !== 'string') return res.status(400).json({ error: 'Invalid path' });
-  eventLogModel.create({
+  runInBackground(eventLogModel.create({
     type:      'pageview',
     username:  req.user?.username || null,
     path:      path.slice(0, 200),
     timestamp: new Date(),
-  }).catch(() => {});
+  }));
   res.sendStatus(204);
 });
 
@@ -630,6 +631,31 @@ app.get('/Admin/Report', async (req, res) => {
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: err.message });
+  }
+});
+
+// Weekly report email — triggered by Vercel Cron (GET, 8am UTC Monday) with Authorization: Bearer <CRON_SECRET>
+function hasCronSecret(header) {
+  const expected = Buffer.from(`Bearer ${process.env.CRON_SECRET}`);
+  const actual   = Buffer.from(header || '');
+  return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
+}
+
+app.get('/Cron/WeeklyReport', async (req, res) => {
+  if (!process.env.CRON_SECRET) return res.status(503).json({ error: 'CRON_SECRET not configured' });
+  if (!hasCronSecret(req.headers.authorization)) return res.status(401).json({ error: 'Unauthorized' });
+  if (!process.env.ADMIN_USERNAME || !process.env.RESEND_API_KEY || !process.env.ADMIN_EMAIL) {
+    return res.status(503).json({ error: 'Weekly report email not configured' });
+  }
+  try {
+    // Required lazily: the Resend client throws at load time when RESEND_API_KEY is unset
+    const sendWeeklyReport = require('./report/sendWeeklyReport');
+    await sendWeeklyReport(await buildReport());
+    console.log('[cron] Weekly report sent.');
+    return res.json({ sent: true });
+  } catch (err) {
+    console.error('[cron] Weekly report failed:', err.message);
+    return res.status(500).json({ error: 'Weekly report failed' });
   }
 });
 
@@ -647,7 +673,7 @@ app.get('/Auth/OAuth/google',
 app.get('/Auth/OAuth/google/callback',
   passport.authenticate('google', { failureRedirect: `${frontendUrl}/login?error=oauth_failed` }),
   (req, res) => {
-    eventLogModel.create({ type: 'login', username: req.user?.username }).catch(() => {});
+    runInBackground(eventLogModel.create({ type: 'login', username: req.user?.username }));
     res.redirect(`${frontendUrl}/login?oauth_success=1`);
   }
 );
@@ -661,7 +687,7 @@ app.get('/Auth/OAuth/facebook',
 app.get('/Auth/OAuth/facebook/callback',
   passport.authenticate('facebook', { failureRedirect: `${frontendUrl}/login?error=oauth_failed` }),
   (req, res) => {
-    eventLogModel.create({ type: 'login', username: req.user?.username }).catch(() => {});
+    runInBackground(eventLogModel.create({ type: 'login', username: req.user?.username }));
     res.redirect(`${frontendUrl}/login?oauth_success=1`);
   }
 );
@@ -709,22 +735,6 @@ if (require.main === module) {
   app.listen(port, () => {
     console.log(`WishXList webserver started on port ${port}`);
   });
-
-  // Weekly report cron — 8am Monday (server local time)
-  if (process.env.ADMIN_USERNAME && process.env.RESEND_API_KEY && process.env.ADMIN_EMAIL) {
-    const cron = require('node-cron');
-    const sendWeeklyReport = require('./report/sendWeeklyReport');
-    cron.schedule('0 8 * * 1', async () => {
-      try {
-        console.log('[cron] Generating weekly report...');
-        const data = await buildReport();
-        await sendWeeklyReport(data);
-        console.log('[cron] Weekly report sent.');
-      } catch (err) {
-        console.error('[cron] Weekly report failed:', err.message);
-      }
-    });
-  }
 }
 
 module.exports = app;

@@ -38,6 +38,7 @@
 - [x] Fix price field from String to Number in WishListItem schema
 
 ## Frontend
+- [ ] Deduplicate initial-load API calls — every page load calls GET /Auth/Me and GET /Groups twice (seen in EventLog during Vercel preview, 2026-10-24; pre-existing on Railway)
 - [x] Check left hand navigation is collapsed across all pages on mobile devices - use sessionStorage rather than localStorage
 - [x] Re-validate server session on route change (router re-validates via /Auth/Me every 2 min)
 - [x] Cache wish list items (GET /WishList) and group members (GET /Groups/Members?groupId=) in Vuex
@@ -49,7 +50,9 @@
 - [x] (Scalability) Deduplicate GET /Groups fetches — groups cached in Vuex, fetched once on login/app load
 
 ## Ops
+- [ ] Enable weekly report email after the Vercel migration — set RESEND_API_KEY, RESEND_FROM_EMAIL (verified sender) and ADMIN_EMAIL in Vercel, then trigger /Cron/WeeklyReport manually to confirm delivery (never enabled on Railway)
 - [x] Weekly report with 3 sections: Stats (# Users, # Groups, # Wishes, # Gifted — this week vs last week), Logins (# unique users, # logins, # page visits broken down by top 5 pages), Metrics (# HTTP errors, avg response time)
 
 ## Tech Debt
+- [ ] Server Jest run doesn't exit without --forceExit — likely the connect-mongo session store's own MongoClient is never closed in test teardown
 - [ ] Consider migrating to React framework when the app scales

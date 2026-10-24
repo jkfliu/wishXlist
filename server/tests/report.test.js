@@ -2,6 +2,11 @@ const request  = require('supertest');
 const mongoose = require('mongoose');
 const { closeAllConnections } = require('./helpers');
 
+// Resend is an external service — mock the email sender at that boundary
+// (factory form: automock would load the real module, whose Resend constructor throws without a key)
+jest.mock('../report/sendWeeklyReport', () => jest.fn());
+const sendWeeklyReport = require('../report/sendWeeklyReport');
+
 let app;
 let userModel;
 let wishListModel;
@@ -178,5 +183,88 @@ describe('GET /Admin/Report — metrics section', () => {
     await eventLogModel.deleteMany({ type: 'api' });
     const res = await adminAgent.get('/Admin/Report');
     expect(res.body.metrics.avgResponseTime).toBeNull();
+  });
+});
+
+
+describe('GET /Cron/WeeklyReport', () => {
+  const CRON_SECRET = 'test-cron-secret-0123456789';
+  const EMAIL_ENV = {
+    ADMIN_USERNAME: ADMIN_USER,
+    RESEND_API_KEY: 're_test_key',
+    ADMIN_EMAIL:    'admin-inbox@example.com',
+  };
+  const auth = (value) => request(app).get('/Cron/WeeklyReport').set('Authorization', value);
+
+  beforeEach(() => {
+    sendWeeklyReport.mockReset();
+    sendWeeklyReport.mockResolvedValue(undefined);
+    process.env.CRON_SECRET = CRON_SECRET;
+    Object.assign(process.env, EMAIL_ENV);
+  });
+
+  afterEach(() => {
+    delete process.env.CRON_SECRET;
+    delete process.env.RESEND_API_KEY;
+    delete process.env.ADMIN_EMAIL;
+    process.env.ADMIN_USERNAME = ADMIN_USER;
+  });
+
+  test('returns 401 without an Authorization header and sends no email', async () => {
+    const res = await request(app).get('/Cron/WeeklyReport');
+    expect(res.status).toBe(401);
+    expect(sendWeeklyReport).not.toHaveBeenCalled();
+  });
+
+  test('returns 401 with the wrong secret and sends no email', async () => {
+    const res = await auth('Bearer wrong-secret');
+    expect(res.status).toBe(401);
+    expect(sendWeeklyReport).not.toHaveBeenCalled();
+  });
+
+  test('returns 401 when the secret is sent without the Bearer prefix', async () => {
+    const res = await auth(CRON_SECRET);
+    expect(res.status).toBe(401);
+    expect(sendWeeklyReport).not.toHaveBeenCalled();
+  });
+
+  test('returns 503 (not 200) when CRON_SECRET is unset, even for "Bearer undefined"', async () => {
+    delete process.env.CRON_SECRET;
+    const res = await auth('Bearer undefined');
+    expect(res.status).toBe(503);
+    expect(sendWeeklyReport).not.toHaveBeenCalled();
+  });
+
+  test.each(['ADMIN_USERNAME', 'RESEND_API_KEY', 'ADMIN_EMAIL'])(
+    'returns 503 and sends no email when %s is missing',
+    async (name) => {
+      delete process.env[name];
+      const res = await auth(`Bearer ${CRON_SECRET}`);
+      expect(res.status).toBe(503);
+      expect(sendWeeklyReport).not.toHaveBeenCalled();
+    }
+  );
+
+  test('with the correct secret, sends the report built from live data and returns 200', async () => {
+    const expectedUsers = await userModel.countDocuments();
+    const res = await auth(`Bearer ${CRON_SECRET}`);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ sent: true });
+    expect(sendWeeklyReport).toHaveBeenCalledTimes(1);
+    const data = sendWeeklyReport.mock.calls[0][0];
+    expect(data.stats.users.total).toBe(expectedUsers);
+    expect(data.history.weeks).toHaveLength(8);
+  });
+
+  test('returns 500 and logs the error when sending fails, and keeps serving requests', async () => {
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    sendWeeklyReport.mockRejectedValueOnce(new Error('Resend is down'));
+
+    const failed = await auth(`Bearer ${CRON_SECRET}`);
+    expect(failed.status).toBe(500);
+    expect(errorSpy.mock.calls.flat().join(' ')).toContain('Resend is down');
+
+    const next = await auth(`Bearer ${CRON_SECRET}`);
+    expect(next.status).toBe(200);
   });
 });
