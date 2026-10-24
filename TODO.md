@@ -50,9 +50,12 @@
 - [x] (Scalability) Deduplicate GET /Groups fetches — groups cached in Vuex, fetched once on login/app load
 
 ## Ops
+- [ ] Phase 7 — retire Railway: after deleting the Railway project, remove railway.toml, decide whether to keep the Dockerfile for local use, update README + CLAUDE.md for Vercel (deployment section, /Cron/WeeklyReport route, CRON_SECRET / RESEND_* / ADMIN_EMAIL config, "Vercel serves the static build and rewrites API paths to the function"), and remove Railway redirect URIs / app domain from Google and Facebook
+- [ ] Atlas backups — free tier has no backups; set up a periodic mongodump export of the wishXlist database
 - [x] Enable weekly report email after the Vercel migration — RESEND_API_KEY and ADMIN_EMAIL set in Vercel; manual /Cron/WeeklyReport trigger delivered the email. RESEND_FROM_EMAIL left unset, so it sends from Resend's test sender and only delivers to the Resend account email — verify a domain in Resend to send elsewhere
 - [x] Weekly report with 3 sections: Stats (# Users, # Groups, # Wishes, # Gifted — this week vs last week), Logins (# unique users, # logins, # page visits broken down by top 5 pages), Metrics (# HTTP errors, avg response time)
 
 ## Tech Debt
+- [ ] Server major upgrades: Express 5 (catch-all '*' becomes '/{*splat}', body-parser 2, vercel_config test must use app.router), mongoose 9, connect-mongo 6, dotenv 18, jest 30, mongodb-memory-server 11
 - [ ] Server Jest run doesn't exit without --forceExit — likely the connect-mongo session store's own MongoClient is never closed in test teardown
-- [ ] Consider migrating to React framework when the app scales
+- [ ] Client framework: Vue 2 is end-of-life (Vue CLI in maintenance) — decide between Vue 3 + Vite and migrating to React; either way rewrites the build and component tests (also clears the remaining low-severity Vue 2 advisories)
