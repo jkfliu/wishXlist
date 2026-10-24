@@ -50,7 +50,7 @@
 - [x] (Scalability) Deduplicate GET /Groups fetches — groups cached in Vuex, fetched once on login/app load
 
 ## Ops
-- [ ] Enable weekly report email after the Vercel migration — set RESEND_API_KEY, RESEND_FROM_EMAIL (verified sender) and ADMIN_EMAIL in Vercel, then trigger /Cron/WeeklyReport manually to confirm delivery (never enabled on Railway)
+- [x] Enable weekly report email after the Vercel migration — RESEND_API_KEY and ADMIN_EMAIL set in Vercel; manual /Cron/WeeklyReport trigger delivered the email. RESEND_FROM_EMAIL left unset, so it sends from Resend's test sender and only delivers to the Resend account email — verify a domain in Resend to send elsewhere
 - [x] Weekly report with 3 sections: Stats (# Users, # Groups, # Wishes, # Gifted — this week vs last week), Logins (# unique users, # logins, # page visits broken down by top 5 pages), Metrics (# HTTP errors, avg response time)
 
 ## Tech Debt
