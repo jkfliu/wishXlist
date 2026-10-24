@@ -39,5 +39,8 @@
     "testEnvironment": "node",
     "globalSetup": "./tests/globalSetup.js",
     "globalTeardown": "./tests/globalTeardown.js"
+  },
+  "overrides": {
+    "zod": "^4.6.6"
   }
 }
